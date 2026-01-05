@@ -1,0 +1,21 @@
+# Build and temporary files
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.obj
+*.o
+*.a
+*.lib
+*.exe
+
+# Emscripten outputs (can be generated via build scripts or GitHub Actions)
+web/wasm/*.wasm
+web/wasm/*.js
+!web/wasm/.gitkeep
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A2B.gif — C++20 WebAssembly GIF Morph Engine</title>
+  <meta name="description" content="Generate animated GIFs morphing image A into image B directly in your browser using C++20 and WebAssembly on GitHub Pages.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo-group">
+      <div class="logo-badge">⚡</div>
+      <div>
+        <h1>A2B.gif</h1>
+      </div>
+      <span class="sub-tag">C++20 WASM</span>
+    </div>
+    <div class="header-links">
+      <a href="https://github.com" target="_blank" id="gh-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Image Drop Zones -->
+    <div class="upload-grid">
+      <div class="drop-zone" id="drop-zone-a">
+        <input type="file" id="file-a" accept="image/*">
+        <div class="drop-zone-content" id="zone-content-a">
+          <div class="drop-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h3>Start Image (A)</h3>
+          <p>Drop image here or click to browse</p>
+        </div>
+        <img id="preview-a" class="preview" style="display:none;" alt="Preview Image A">
+      </div>
+
+      <div class="drop-zone" id="drop-zone-b">
+        <input type="file" id="file-b" accept="image/*">
+        <div class="drop-zone-content" id="zone-content-b">
+          <div class="drop-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h3>End Image (B)</h3>
+          <p>Drop image here or click to browse</p>
+        </div>
+        <img id="preview-b" class="preview" style="display:none;" alt="Preview Image B">
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-card">
+      <div class="control-item">
+        <label for="step-count">Steps (Frames): <span class="val" id="step-val">16</span></label>
+        <input type="range" id="step-count" min="4" max="40" value="16" step="1">
+      </div>
+
+      <div class="control-item">
+        <label for="frame-delay">Frame Delay: <span class="val" id="delay-val">100 ms</span></label>
+        <input type="range" id="frame-delay" min="30" max="500" value="100" step="10">
+      </div>
+
+      <div class="control-item">
+        <label for="transition-mode">Transition Mode</label>
+        <select id="transition-mode">
+          <option value="0">Crossfade (Linear)</option>
+          <option value="1">Horizontal Wipe (Left to Right)</option>
+          <option value="2">Vertical Wipe (Top to Bottom)</option>
+          <option value="3">Radial Circle Wipe</option>
+          <option value="4">Matrix Pixel Dissolve</option>
+          <option value="5">Smooth Cubic Blend</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label for="render-resolution">Max Resolution</label>
+        <select id="render-resolution">
+          <option value="256">256 x 256 (Fast)</option>
+          <option value="400" selected>400 x 400 (Balanced)</option>
+          <option value="600">600 x 600 (High Quality)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label class="checkbox-group">
+          <input type="checkbox" id="bounce-mode" checked>
+          <span>Ping-Pong Loop (A → B → A)</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Action button -->
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-generate" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        Generate GIF
+      </button>
+    </div>
+
+    <!-- Output preview -->
+    <div class="output-card" id="output-section" style="display:none;">
+      <h2>Generated GIF Result</h2>
+      <div class="output-preview">
+        <img id="gif-result" alt="Generated Morph GIF">
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary" id="btn-download" download="A2B_morph.gif">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download GIF
+        </a>
+      </div>
+      <div class="status-badge" id="perf-metrics"></div>
+    </div>
+  </main>
+
+  <footer>
+    <p>A2B.gif — Powered by C++20 & WebAssembly. Client-side execution with zero server footprint.</p>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
