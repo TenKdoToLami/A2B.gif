@@ -24,9 +24,9 @@ Deployable on GitHub Pages directly through GitHub Actions.
   - `Matrix Pixel Dissolve`: High-frequency noise dissolve
   - `Smooth Cubic Blend`: Cubic bezier eased interpolation
 - **Custom Controls**:
-  - Steps / intermediate frame count (4 to 40 frames)
+  - Steps / intermediate frame count (4 to 100 frames)
   - Frame delay (30 ms to 500 ms)
-  - Max resolution scaling (256px, 400px, 600px)
+  - Automatic native resolution & centered cropping
   - Ping-Pong / Bounce loop mode (`A → B → A`)
 - **Drag & Drop UI**: Clean modern glassmorphic interface with real-time preview and instant download.
 

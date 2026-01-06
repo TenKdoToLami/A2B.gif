@@ -152,6 +152,7 @@ main {
   height: 100%;
   opacity: 0;
   cursor: pointer;
+  z-index: 10;
 }
 
 .drop-zone-content {
@@ -161,6 +162,7 @@ main {
   text-align: center;
   pointer-events: none;
   padding: 1rem;
+  z-index: 2;
 }
 
 .drop-icon {
@@ -193,6 +195,8 @@ main {
   height: 100%;
   object-fit: contain;
   background: #08090d;
+  z-index: 5;
+  border-radius: calc(var(--card-radius) - 2px);
 }
 
 /* Control Panel */

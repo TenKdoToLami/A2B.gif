@@ -70,7 +70,7 @@
     <div class="controls-card">
       <div class="control-item">
         <label for="step-count">Steps (Frames): <span class="val" id="step-val">16</span></label>
-        <input type="range" id="step-count" min="4" max="40" value="16" step="1">
+        <input type="range" id="step-count" min="4" max="100" value="16" step="1">
       </div>
 
       <div class="control-item">
@@ -90,14 +90,7 @@
         </select>
       </div>
 
-      <div class="control-item">
-        <label for="render-resolution">Max Resolution</label>
-        <select id="render-resolution">
-          <option value="256">256 x 256 (Fast)</option>
-          <option value="400" selected>400 x 400 (Balanced)</option>
-          <option value="600">600 x 600 (High Quality)</option>
-        </select>
-      </div>
+
 
       <div class="control-item">
         <label class="checkbox-group">
@@ -141,6 +134,6 @@
     <p>A2B.gif — Powered by C++20 & WebAssembly. Client-side execution with zero server footprint.</p>
   </footer>
 
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

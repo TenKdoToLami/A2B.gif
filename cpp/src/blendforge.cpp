@@ -13,11 +13,22 @@ static inline uint8_t lerp_channel(uint8_t a, uint8_t b, float t) {
     return static_cast<uint8_t>(a + t * (b - a));
 }
 
-// Pseudo-random noise function for deterministic pixel dissolve
-static inline float hash2d(int x, int y) {
-    int n = x + y * 57;
-    n = (n << 13) ^ n;
-    return (1.0f - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0f) * 0.5f + 0.5f;
+// 8x8 Bayer matrix for pixel matrix dissolve
+static const uint8_t BAYER_8[64] = {
+     0, 32,  8, 40,  2, 34, 10, 42,
+    48, 16, 56, 24, 50, 18, 58, 26,
+    12, 44,  4, 36, 14, 46,  6, 38,
+    60, 28, 52, 20, 62, 30, 54, 22,
+     3, 35, 11, 43,  1, 33,  9, 41,
+    51, 19, 59, 27, 49, 17, 57, 25,
+    15, 47,  7, 39, 13, 45,  5, 37,
+    63, 31, 55, 23, 61, 29, 53, 21
+};
+
+static inline float get_bayer_threshold(int x, int y) {
+    int bx = x & 7;
+    int by = y & 7;
+    return static_cast<float>(BAYER_8[by * 8 + bx]) / 64.0f;
 }
 
 std::vector<std::vector<uint8_t>> generate_frames(
@@ -77,8 +88,8 @@ std::vector<std::vector<uint8_t>> generate_frames(
                         break;
                     }
                     case TransitionMode::PixelDissolve: {
-                        float noise = hash2d(x, y);
-                        blend = (t >= noise) ? 1.0f : 0.0f;
+                        float threshold = get_bayer_threshold(x, y);
+                        blend = (t >= threshold) ? 1.0f : 0.0f;
                         break;
                     }
                     case TransitionMode::ZoomBlend: {
