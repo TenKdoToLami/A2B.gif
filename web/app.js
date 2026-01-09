@@ -226,6 +226,9 @@ const outputSection = document.getElementById('output-section');
 const gifResult = document.getElementById('gif-result');
 const btnDownload = document.getElementById('btn-download');
 const perfMetrics = document.getElementById('perf-metrics');
+const stepsContainer = document.getElementById('steps-container');
+const stepsStrip = document.getElementById('steps-strip');
+const stepsCountLabel = document.getElementById('steps-count-label');
 
 // Sliders listener
 if (stepInput && stepVal) {
@@ -386,79 +389,80 @@ if (btnGenerate) {
         let gifBytes = null;
         let usedEngine = "Client-Side Engine";
 
+        // Always produce intermediate frames for the step-by-step gallery
+        const intermediateFrames = [];
+        const totalFrames = steps;
+        const centerX = width * 0.5;
+        const centerY = height * 0.5;
+        const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+
+        const bayer8 = [
+           0, 32,  8, 40,  2, 34, 10, 42,
+          48, 16, 56, 24, 50, 18, 58, 26,
+          12, 44,  4, 36, 14, 46,  6, 38,
+          60, 28, 52, 20, 62, 30, 54, 22,
+           3, 35, 11, 43,  1, 33,  9, 41,
+          51, 19, 59, 27, 49, 17, 57, 25,
+          15, 47,  7, 39, 13, 45,  5, 37,
+          63, 31, 55, 23, 61, 29, 53, 21
+        ];
+
+        const getDissolveThreshold = (x, y) => {
+          const bx = x % 8;
+          const by = y % 8;
+          const bayerVal = bayer8[by * 8 + bx] / 64.0;
+          const pseudo = ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1 + 1) % 1;
+          return 0.7 * bayerVal + 0.3 * pseudo;
+        };
+
+        for (let s = 0; s < totalFrames; ++s) {
+          const t = s / (totalFrames - 1);
+          const frame = new Uint8Array(width * height * 4);
+
+          for (let y = 0; y < height; ++y) {
+            for (let x = 0; x < width; ++x) {
+              const idx = (y * width + x) * 4;
+              let blend = t;
+
+              if (mode === 1) {
+                const pos = x / width;
+                blend = Math.max(0, Math.min(1, (t * 1.1 - pos) / 0.1));
+              } else if (mode === 2) {
+                const pos = y / height;
+                blend = Math.max(0, Math.min(1, (t * 1.1 - pos) / 0.1));
+              } else if (mode === 3) {
+                const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                blend = Math.max(0, Math.min(1, (t * maxDist - dist) / 15.0));
+              } else if (mode === 4) {
+                const threshold = getDissolveThreshold(x, y);
+                blend = t >= threshold ? 1.0 : 0.0;
+              } else if (mode === 5) {
+                blend = t * t * (3 - 2 * t);
+              }
+
+              for (let c = 0; c < 4; ++c) {
+                frame[idx + c] = Math.round(dataA[idx + c] + blend * (dataB[idx + c] - dataA[idx + c]));
+              }
+            }
+          }
+          intermediateFrames.push(frame);
+        }
+
+        let gifFrames = intermediateFrames;
+        if (bounce && intermediateFrames.length > 2) {
+          gifFrames = [...intermediateFrames];
+          for (let i = intermediateFrames.length - 2; i > 0; --i) {
+            gifFrames.push(intermediateFrames[i]);
+          }
+        }
+
         if (wasmModule && typeof wasmModule.createMorphGif === 'function') {
           usedEngine = "C++20 WebAssembly";
           const strA = String.fromCharCode.apply(null, dataA);
           const strB = String.fromCharCode.apply(null, dataB);
           gifBytes = wasmModule.createMorphGif(strA, strB, width, height, steps, delayMs, mode, bounce);
         } else {
-          const frames = [];
-          const totalFrames = steps;
-          const centerX = width * 0.5;
-          const centerY = height * 0.5;
-          const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
-
-          // 8x8 Bayer threshold matrix for clean pixel/dither dissolve
-          const bayer8 = [
-             0, 32,  8, 40,  2, 34, 10, 42,
-            48, 16, 56, 24, 50, 18, 58, 26,
-            12, 44,  4, 36, 14, 46,  6, 38,
-            60, 28, 52, 20, 62, 30, 54, 22,
-             3, 35, 11, 43,  1, 33,  9, 41,
-            51, 19, 59, 27, 49, 17, 57, 25,
-            15, 47,  7, 39, 13, 45,  5, 37,
-            63, 31, 55, 23, 61, 29, 53, 21
-          ];
-
-          const getDissolveThreshold = (x, y) => {
-            const bx = x % 8;
-            const by = y % 8;
-            const bayerVal = bayer8[by * 8 + bx] / 64.0;
-            // combine Bayer with deterministic noise for organic dissolve
-            const pseudo = ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1 + 1) % 1;
-            return 0.7 * bayerVal + 0.3 * pseudo;
-          };
-
-          for (let s = 0; s < totalFrames; ++s) {
-            const t = s / (totalFrames - 1);
-            const frame = new Uint8Array(width * height * 4);
-
-            for (let y = 0; y < height; ++y) {
-              for (let x = 0; x < width; ++x) {
-                const idx = (y * width + x) * 4;
-                let blend = t;
-
-                if (mode === 1) {
-                  const pos = x / width;
-                  blend = Math.max(0, Math.min(1, (t * 1.1 - pos) / 0.1));
-                } else if (mode === 2) {
-                  const pos = y / height;
-                  blend = Math.max(0, Math.min(1, (t * 1.1 - pos) / 0.1));
-                } else if (mode === 3) {
-                  const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-                  blend = Math.max(0, Math.min(1, (t * maxDist - dist) / 15.0));
-                } else if (mode === 4) {
-                  const threshold = getDissolveThreshold(x, y);
-                  blend = t >= threshold ? 1.0 : 0.0;
-                } else if (mode === 5) {
-                  blend = t * t * (3 - 2 * t);
-                }
-
-                for (let c = 0; c < 4; ++c) {
-                  frame[idx + c] = Math.round(dataA[idx + c] + blend * (dataB[idx + c] - dataA[idx + c]));
-                }
-              }
-            }
-            frames.push(frame);
-          }
-
-          if (bounce && frames.length > 2) {
-            for (let i = frames.length - 2; i > 0; --i) {
-              frames.push(frames[i]);
-            }
-          }
-
-          gifBytes = createFastGif(frames, width, height, delayMs, true);
+          gifBytes = createFastGif(gifFrames, width, height, delayMs, true);
         }
 
         const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
@@ -473,6 +477,61 @@ if (btnGenerate) {
 
         const sizeMb = (blob.size / (1024 * 1024)).toFixed(2);
         perfMetrics.textContent = `Rendered ${steps} frames (${width}x${height}) in ${elapsed}s • Size: ${sizeMb} MB • Engine: ${usedEngine}`;
+
+        // Populate Scrollable Steps Strip (with clear A->B and B->A bounce groupings)
+        if (stepsStrip && stepsContainer) {
+          stepsStrip.innerHTML = '';
+          const forwardCount = intermediateFrames.length;
+          const returnCount = bounce && intermediateFrames.length > 2 ? intermediateFrames.length - 2 : 0;
+
+          if (bounce && returnCount > 0) {
+            stepsCountLabel.textContent = `${forwardCount + returnCount} frames (${forwardCount} A→B + ${returnCount} B→A)`;
+          } else {
+            stepsCountLabel.textContent = `${forwardCount} steps (A → B)`;
+          }
+
+          let addedDivider = false;
+
+          gifFrames.forEach((frameBytes, idx) => {
+            const isReturn = bounce && idx >= forwardCount;
+
+            // Insert vertical visual divider before the return loop starts
+            if (isReturn && !addedDivider) {
+              const divider = document.createElement('div');
+              divider.className = 'step-divider';
+              divider.innerHTML = `<span>⟲ Return Loop<br>(B → A)</span>`;
+              stepsStrip.appendChild(divider);
+              addedDivider = true;
+            }
+
+            const card = document.createElement('div');
+            card.className = isReturn ? 'step-card return' : 'step-card';
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            const imgData = new ImageData(new Uint8ClampedArray(frameBytes.buffer), width, height);
+            ctx.putImageData(imgData, 0, 0);
+
+            const meta = document.createElement('div');
+            meta.className = 'step-meta';
+
+            if (!isReturn) {
+              const pct = Math.round((idx / (forwardCount - 1)) * 100);
+              meta.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">A→B (${pct}%)</span>`;
+            } else {
+              const returnIndex = idx - forwardCount + 1;
+              meta.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">B→A</span>`;
+            }
+
+            card.appendChild(canvas);
+            card.appendChild(meta);
+            stepsStrip.appendChild(card);
+          });
+
+          stepsContainer.style.display = 'flex';
+        }
 
         outputSection.style.display = 'flex';
         outputSection.scrollIntoView({ behavior: 'smooth' });
