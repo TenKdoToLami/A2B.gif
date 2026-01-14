@@ -131,9 +131,26 @@
       <!-- Scrollable Intermediate Frames Strip -->
       <div class="steps-section" id="steps-container" style="display:none;">
         <div class="steps-header">
-          <h3>Individual Morph Steps</h3>
+          <h3>Individual Morph Steps <span class="tip-text">(click any step to inspect & cycle with ← / → keys)</span></h3>
           <span class="steps-count" id="steps-count-label">0 frames</span>
         </div>
+
+        <!-- Single Step Inspector / Previewer above the strip -->
+        <div class="step-inspector" id="step-inspector" style="display:none;">
+          <div class="inspector-toolbar">
+            <span class="inspector-badge" id="inspector-title">Step #1</span>
+            <div class="inspector-controls">
+              <button class="nav-btn" id="inspector-prev" title="Previous frame (Left arrow)">◀</button>
+              <span class="inspector-counter" id="inspector-counter">1 / 16</span>
+              <button class="nav-btn" id="inspector-next" title="Next frame (Right arrow)">▶</button>
+              <button class="close-btn" id="inspector-close" title="Close inspector">✕</button>
+            </div>
+          </div>
+          <div class="inspector-canvas-wrapper">
+            <canvas id="inspector-canvas"></canvas>
+          </div>
+        </div>
+
         <div class="steps-scroll" id="steps-strip"></div>
       </div>
     </div>

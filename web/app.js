@@ -230,6 +230,22 @@ const stepsContainer = document.getElementById('steps-container');
 const stepsStrip = document.getElementById('steps-strip');
 const stepsCountLabel = document.getElementById('steps-count-label');
 
+const stepInspector = document.getElementById('step-inspector');
+const inspectorTitle = document.getElementById('inspector-title');
+const inspectorCounter = document.getElementById('inspector-counter');
+const inspectorPrev = document.getElementById('inspector-prev');
+const inspectorNext = document.getElementById('inspector-next');
+const inspectorClose = document.getElementById('inspector-close');
+const inspectorCanvas = document.getElementById('inspector-canvas');
+
+let currentInspectedIndex = -1;
+let currentRenderedFrames = [];
+let currentFrameWidth = 0;
+let currentFrameHeight = 0;
+let currentFrameCount = 0;
+let currentForwardCount = 0;
+let currentBounce = false;
+
 // Sliders listener
 if (stepInput && stepVal) {
   stepInput.addEventListener('input', () => {
@@ -527,8 +543,21 @@ if (btnGenerate) {
 
             card.appendChild(canvas);
             card.appendChild(meta);
+
+            // Click step card to open inspector above the strip
+            card.addEventListener('click', () => {
+              showInspectedFrame(idx);
+            });
+
             stepsStrip.appendChild(card);
           });
+
+          // Save current state for inspector
+          currentRenderedFrames = gifFrames;
+          currentFrameWidth = width;
+          currentFrameHeight = height;
+          currentForwardCount = forwardCount;
+          currentBounce = bounce;
 
           stepsContainer.style.display = 'flex';
         }
@@ -551,5 +580,91 @@ if (btnGenerate) {
     }, 50);
   });
 }
+
+// ==========================================
+// 3. STEP INSPECTOR CONTROLLER
+// ==========================================
+function showInspectedFrame(index) {
+  if (!currentRenderedFrames || currentRenderedFrames.length === 0) return;
+  if (index < 0) index = currentRenderedFrames.length - 1;
+  if (index >= currentRenderedFrames.length) index = 0;
+
+  currentInspectedIndex = index;
+  const frameBytes = currentRenderedFrames[index];
+
+  // Render on inspector canvas
+  inspectorCanvas.width = currentFrameWidth;
+  inspectorCanvas.height = currentFrameHeight;
+  const ctx = inspectorCanvas.getContext('2d');
+  const imgData = new ImageData(new Uint8ClampedArray(frameBytes.buffer), currentFrameWidth, currentFrameHeight);
+  ctx.putImageData(imgData, 0, 0);
+
+  // Update labels
+  const isReturn = currentBounce && index >= currentForwardCount;
+  if (!isReturn) {
+    const pct = Math.round((index / (currentForwardCount - 1)) * 100);
+    inspectorTitle.innerHTML = `Step #${index + 1} &bull; Forward (A &rarr; B) &bull; <span style="color:var(--accent)">${pct}%</span>`;
+  } else {
+    inspectorTitle.innerHTML = `Step #${index + 1} &bull; Return Loop (B &rarr; A)`;
+  }
+  inspectorCounter.textContent = `${index + 1} / ${currentRenderedFrames.length}`;
+
+  // Update active border on step cards
+  const allCards = stepsStrip.querySelectorAll('.step-card');
+  allCards.forEach((c, i) => {
+    c.classList.toggle('active', i === index);
+  });
+
+  // Scroll the active card smoothly into view inside the strip
+  if (allCards[index]) {
+    allCards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  stepInspector.style.display = 'flex';
+  stepInspector.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+if (inspectorPrev) {
+  inspectorPrev.addEventListener('click', () => {
+    if (currentInspectedIndex !== -1) {
+      showInspectedFrame(currentInspectedIndex - 1);
+    }
+  });
+}
+
+if (inspectorNext) {
+  inspectorNext.addEventListener('click', () => {
+    if (currentInspectedIndex !== -1) {
+      showInspectedFrame(currentInspectedIndex + 1);
+    }
+  });
+}
+
+if (inspectorClose) {
+  inspectorClose.addEventListener('click', () => {
+    stepInspector.style.display = 'none';
+    currentInspectedIndex = -1;
+    const allCards = stepsStrip.querySelectorAll('.step-card');
+    allCards.forEach(c => c.classList.remove('active'));
+  });
+}
+
+// Arrow Key Navigation (Left / Right / Esc)
+window.addEventListener('keydown', (e) => {
+  if (stepInspector && stepInspector.style.display !== 'none' && currentInspectedIndex !== -1) {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      showInspectedFrame(currentInspectedIndex - 1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      showInspectedFrame(currentInspectedIndex + 1);
+    } else if (e.key === 'Escape') {
+      stepInspector.style.display = 'none';
+      currentInspectedIndex = -1;
+      const allCards = stepsStrip.querySelectorAll('.step-card');
+      allCards.forEach(c => c.classList.remove('active'));
+    }
+  }
+});
 
 initWasm();
