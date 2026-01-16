@@ -170,7 +170,6 @@ let imgBData = null;
 let activeBlobUrl = null;
 
 async function initWasm() {
-  // If running via HTTP/HTTPS, attempt loading WebAssembly
   if (location.protocol === 'http:' || location.protocol === 'https:') {
     try {
       const script = document.createElement('script');
@@ -178,28 +177,11 @@ async function initWasm() {
       script.onload = async () => {
         if (window.BlendForgeModule) {
           wasmModule = await window.BlendForgeModule();
-          updateBadge(true);
         }
       };
-      script.onerror = () => updateBadge(false);
       document.head.appendChild(script);
     } catch {
-      updateBadge(false);
-    }
-  } else {
-    // When opened directly via file://, browser prevents Wasm loading due to CORS
-    updateBadge(false);
-  }
-}
-
-function updateBadge(isWasm) {
-  const badge = document.querySelector('.sub-tag');
-  if (badge) {
-    badge.textContent = isWasm ? 'C++20 WASM ACTIVE' : 'CLIENT ENGINE ACTIVE';
-    if (!isWasm) {
-      badge.style.background = 'rgba(6, 182, 212, 0.15)';
-      badge.style.borderColor = 'rgba(6, 182, 212, 0.3)';
-      badge.style.color = '#67e8f9';
+      // Keep silent fallback
     }
   }
 }
@@ -492,7 +474,7 @@ if (btnGenerate) {
         btnDownload.download = `A2B_morph_${width}x${height}.gif`;
 
         const sizeMb = (blob.size / (1024 * 1024)).toFixed(2);
-        perfMetrics.textContent = `Rendered ${steps} frames (${width}x${height}) in ${elapsed}s • Size: ${sizeMb} MB • Engine: ${usedEngine}`;
+        perfMetrics.textContent = `${steps} frames • ${width}×${height} px • ${sizeMb} MB • Generated in ${elapsed}s`;
 
         // Populate Scrollable Steps Strip (with clear A->B and B->A bounce groupings)
         if (stepsStrip && stepsContainer) {
