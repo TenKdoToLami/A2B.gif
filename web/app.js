@@ -366,6 +366,98 @@ function processImages(targetWidth, targetHeight) {
   return { dataA, dataB };
 }
 
+// 8x8 Bayer threshold matrix for clean pixel/dither dissolve
+const BAYER_8 = [
+   0, 32,  8, 40,  2, 34, 10, 42,
+  48, 16, 56, 24, 50, 18, 58, 26,
+  12, 44,  4, 36, 14, 46,  6, 38,
+  60, 28, 52, 20, 62, 30, 54, 22,
+   3, 35, 11, 43,  1, 33,  9, 41,
+  51, 19, 59, 27, 49, 17, 57, 25,
+  15, 47,  7, 39, 13, 45,  5, 37,
+  63, 31, 55, 23, 61, 29, 53, 21
+];
+
+/**
+ * Computes deterministic dissolve threshold from Bayer matrix and spatial coordinates
+ * @param {number} x
+ * @param {number} y
+ * @returns {number} threshold in range [0, 1]
+ */
+function getDissolveThreshold(x, y) {
+  const bx = x % 8;
+  const by = y % 8;
+  const bayerVal = BAYER_8[by * 8 + bx] / 64.0;
+  const pseudo = ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1 + 1) % 1;
+  return 0.7 * bayerVal + 0.3 * pseudo;
+}
+
+/**
+ * Generates RGBA byte buffers for each transition step between Image A and Image B
+ * @param {Uint8ClampedArray} dataA
+ * @param {Uint8ClampedArray} dataB
+ * @param {number} width
+ * @param {number} height
+ * @param {number} steps
+ * @param {number} mode
+ * @returns {Uint8Array[]} array of RGBA frame buffers
+ */
+function generateIntermediateFrames(dataA, dataB, width, height, steps, mode) {
+  const frames = [];
+  const totalFrames = steps;
+  const centerX = width * 0.5;
+  const centerY = height * 0.5;
+  const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+
+  for (let s = 0; s < totalFrames; ++s) {
+    const t = s / (totalFrames - 1);
+    const frame = new Uint8Array(width * height * 4);
+
+    for (let y = 0; y < height; ++y) {
+      for (let x = 0; x < width; ++x) {
+        const idx = (y * width + x) * 4;
+        let blend = t;
+
+        switch (mode) {
+          case 1: { // Horizontal Wipe
+            const pos = x / width;
+            blend = Math.max(0, Math.min(1, (t * 1.1 - pos) / 0.1));
+            break;
+          }
+          case 2: { // Vertical Wipe
+            const pos = y / height;
+            blend = Math.max(0, Math.min(1, (t * 1.1 - pos) / 0.1));
+            break;
+          }
+          case 3: { // Radial Circle Wipe
+            const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+            blend = Math.max(0, Math.min(1, (t * maxDist - dist) / 15.0));
+            break;
+          }
+          case 4: { // Matrix Dissolve
+            blend = t >= getDissolveThreshold(x, y) ? 1.0 : 0.0;
+            break;
+          }
+          case 5: { // Smooth Cubic Blend
+            blend = t * t * (3 - 2 * t);
+            break;
+          }
+          default: { // Crossfade
+            blend = t;
+            break;
+          }
+        }
+
+        for (let c = 0; c < 4; ++c) {
+          frame[idx + c] = Math.round(dataA[idx + c] + blend * (dataB[idx + c] - dataA[idx + c]));
+        }
+      }
+    }
+    frames.push(frame);
+  }
+  return frames;
+}
+
 if (btnGenerate) {
   btnGenerate.addEventListener('click', async () => {
     if (!imgAData || !imgBData) return;
@@ -385,66 +477,8 @@ if (btnGenerate) {
       try {
         const { dataA, dataB } = processImages(width, height);
         let gifBytes = null;
-        let usedEngine = "Client-Side Engine";
 
-        // Always produce intermediate frames for the step-by-step gallery
-        const intermediateFrames = [];
-        const totalFrames = steps;
-        const centerX = width * 0.5;
-        const centerY = height * 0.5;
-        const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
-
-        const bayer8 = [
-           0, 32,  8, 40,  2, 34, 10, 42,
-          48, 16, 56, 24, 50, 18, 58, 26,
-          12, 44,  4, 36, 14, 46,  6, 38,
-          60, 28, 52, 20, 62, 30, 54, 22,
-           3, 35, 11, 43,  1, 33,  9, 41,
-          51, 19, 59, 27, 49, 17, 57, 25,
-          15, 47,  7, 39, 13, 45,  5, 37,
-          63, 31, 55, 23, 61, 29, 53, 21
-        ];
-
-        const getDissolveThreshold = (x, y) => {
-          const bx = x % 8;
-          const by = y % 8;
-          const bayerVal = bayer8[by * 8 + bx] / 64.0;
-          const pseudo = ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1 + 1) % 1;
-          return 0.7 * bayerVal + 0.3 * pseudo;
-        };
-
-        for (let s = 0; s < totalFrames; ++s) {
-          const t = s / (totalFrames - 1);
-          const frame = new Uint8Array(width * height * 4);
-
-          for (let y = 0; y < height; ++y) {
-            for (let x = 0; x < width; ++x) {
-              const idx = (y * width + x) * 4;
-              let blend = t;
-
-              if (mode === 1) {
-                const pos = x / width;
-                blend = Math.max(0, Math.min(1, (t * 1.1 - pos) / 0.1));
-              } else if (mode === 2) {
-                const pos = y / height;
-                blend = Math.max(0, Math.min(1, (t * 1.1 - pos) / 0.1));
-              } else if (mode === 3) {
-                const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-                blend = Math.max(0, Math.min(1, (t * maxDist - dist) / 15.0));
-              } else if (mode === 4) {
-                const threshold = getDissolveThreshold(x, y);
-                blend = t >= threshold ? 1.0 : 0.0;
-              } else if (mode === 5) {
-                blend = t * t * (3 - 2 * t);
-              }
-
-              for (let c = 0; c < 4; ++c) {
-                frame[idx + c] = Math.round(dataA[idx + c] + blend * (dataB[idx + c] - dataA[idx + c]));
-              }
-            }
-          }
-          intermediateFrames.push(frame);
-        }
+        const intermediateFrames = generateIntermediateFrames(dataA, dataB, width, height, steps, mode);
 
         let gifFrames = intermediateFrames;
         if (bounce && intermediateFrames.length > 2) {
