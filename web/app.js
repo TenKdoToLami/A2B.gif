@@ -88,7 +88,7 @@ class LZWEncoder {
   }
 }
 
-function createFastGif(frames, width, height, delayMs, loop = true) {
+function createFastGif(frames, width, height, delayMs, colors = 256, loop = true) {
   const bytes = [];
   const appendStr = (s) => {
     for (let i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i));
@@ -101,19 +101,68 @@ function createFastGif(frames, width, height, delayMs, loop = true) {
   appendStr("GIF89a");
   appendU16(width);
   appendU16(height);
-  bytes.push(0xF7, 0, 0);
+  bytes.push(0xF7, 0, 0); // 8 bits per pixel (256 table entries max)
 
-  for (let r = 0; r < 6; ++r) {
-    for (let g = 0; g < 7; ++g) {
-      for (let b = 0; b < 6; ++b) {
-        bytes.push(Math.round(r * 255 / 5));
-        bytes.push(Math.round(g * 255 / 6));
-        bytes.push(Math.round(b * 255 / 5));
+  // Palette generation based on chosen color depth
+  const palette = [];
+  let quantize = null;
+
+  if (colors <= 64) {
+    // 4x4x4 uniform cube = 64 colors
+    for (let r = 0; r < 4; ++r) {
+      for (let g = 0; g < 4; ++g) {
+        for (let b = 0; b < 4; ++b) {
+          palette.push(Math.round(r * 255 / 3), Math.round(g * 255 / 3), Math.round(b * 255 / 3));
+        }
       }
     }
+    // Pad remaining to 256
+    while (palette.length < 256 * 3) palette.push(0);
+
+    quantize = (r, g, b) => {
+      let ri = Math.min(3, Math.floor((r * 3 + 64) / 255));
+      let gi = Math.min(3, Math.floor((g * 3 + 64) / 255));
+      let bi = Math.min(3, Math.floor((b * 3 + 64) / 255));
+      return ri * 16 + gi * 4 + bi;
+    };
+  } else if (colors <= 128) {
+    // 5x5x5 uniform cube = 125 colors + 3 grays
+    for (let r = 0; r < 5; ++r) {
+      for (let g = 0; g < 5; ++g) {
+        for (let b = 0; b < 5; ++b) {
+          palette.push(Math.round(r * 255 / 4), Math.round(g * 255 / 4), Math.round(b * 255 / 4));
+        }
+      }
+    }
+    palette.push(40, 40, 40, 128, 128, 128, 220, 220, 220);
+    while (palette.length < 256 * 3) palette.push(0);
+
+    quantize = (r, g, b) => {
+      let ri = Math.min(4, Math.floor((r * 4 + 64) / 255));
+      let gi = Math.min(4, Math.floor((g * 4 + 64) / 255));
+      let bi = Math.min(4, Math.floor((b * 4 + 64) / 255));
+      return ri * 25 + gi * 5 + bi;
+    };
+  } else {
+    // 6x7x6 uniform cube = 252 colors + 4 grays (Standard 256)
+    for (let r = 0; r < 6; ++r) {
+      for (let g = 0; g < 7; ++g) {
+        for (let b = 0; b < 6; ++b) {
+          palette.push(Math.round(r * 255 / 5), Math.round(g * 255 / 6), Math.round(b * 255 / 5));
+        }
+      }
+    }
+    palette.push(32, 32, 32, 64, 64, 64, 128, 128, 128, 200, 200, 200);
+
+    quantize = (r, g, b) => {
+      let ri = Math.min(5, Math.floor((r * 5 + 127) / 255));
+      let gi = Math.min(6, Math.floor((g * 6 + 127) / 255));
+      let bi = Math.min(5, Math.floor((b * 5 + 127) / 255));
+      return ri * 42 + gi * 6 + bi;
+    };
   }
-  const extra = [32, 64, 128, 200];
-  for (let x of extra) bytes.push(x, x, x);
+
+  for (let b of palette) bytes.push(b);
 
   if (loop) {
     bytes.push(0x21, 0xFF, 11);
@@ -122,13 +171,6 @@ function createFastGif(frames, width, height, delayMs, loop = true) {
     appendU16(0);
     bytes.push(0);
   }
-
-  const quantize = (r, g, b) => {
-    let ri = Math.min(5, Math.floor((r * 5 + 127) / 255));
-    let gi = Math.min(6, Math.floor((g * 6 + 127) / 255));
-    let bi = Math.min(5, Math.floor((b * 5 + 127) / 255));
-    return ri * 42 + gi * 6 + bi;
-  };
 
   const delayCs = Math.max(1, Math.round(delayMs / 10));
 
@@ -196,12 +238,69 @@ const previewB = document.getElementById('preview-b');
 const contentA = document.getElementById('zone-content-a');
 const contentB = document.getElementById('zone-content-b');
 
+const chipA = document.getElementById('meta-chip-a');
+const chipB = document.getElementById('meta-chip-b');
+
 const stepInput = document.getElementById('step-count');
 const stepVal = document.getElementById('step-val');
 const delayInput = document.getElementById('frame-delay');
 const delayVal = document.getElementById('delay-val');
-const modeSelect = document.getElementById('transition-mode');
-const bounceInput = document.getElementById('bounce-mode');
+
+// Overhauled Config State
+let selectedMode = 0;
+let selectedEasing = 'smooth';
+let selectedColors = 256;
+let selectedScale = 1.0;
+let selectedLoop = 'a-b-a';
+
+// Category 1: Mode Button Selector
+const modeBtns = document.querySelectorAll('.mode-btn');
+modeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    modeBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedMode = parseInt(btn.dataset.mode, 10);
+  });
+});
+
+// Category 2: Easing Selector
+const easingBtns = document.querySelectorAll('#easing-selector .seg-btn');
+easingBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    easingBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedEasing = btn.dataset.easing;
+  });
+});
+
+// Category 3: Colors & Scale Selectors
+const colorsBtns = document.querySelectorAll('#colors-selector .seg-btn');
+colorsBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    colorsBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedColors = parseInt(btn.dataset.colors, 10);
+  });
+});
+
+const scaleBtns = document.querySelectorAll('#scale-selector .seg-btn');
+scaleBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    scaleBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedScale = parseFloat(btn.dataset.scale);
+  });
+});
+
+// Category 4: Loop Direction Selector
+const loopBtns = document.querySelectorAll('#loop-selector .seg-btn');
+loopBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    loopBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedLoop = btn.dataset.loop;
+  });
+});
 
 const btnGenerate = document.getElementById('btn-generate');
 const outputSection = document.getElementById('output-section');
@@ -224,9 +323,8 @@ let currentInspectedIndex = -1;
 let currentRenderedFrames = [];
 let currentFrameWidth = 0;
 let currentFrameHeight = 0;
-let currentFrameCount = 0;
 let currentForwardCount = 0;
-let currentBounce = false;
+let currentLoopMode = 'a-b-a';
 
 // Sliders listener
 if (stepInput && stepVal) {
@@ -255,12 +353,20 @@ function handleImageFile(file, isA) {
         previewA.style.display = 'block';
         contentA.style.display = 'none';
         dropA.classList.add('has-image');
+        if (chipA) {
+          chipA.textContent = `${img.naturalWidth}×${img.naturalHeight} px`;
+          chipA.classList.add('loaded');
+        }
       } else {
         imgBData = img;
         previewB.src = dataUrl;
         previewB.style.display = 'block';
         contentB.style.display = 'none';
         dropB.classList.add('has-image');
+        if (chipB) {
+          chipB.textContent = `${img.naturalWidth}×${img.naturalHeight} px`;
+          chipB.classList.add('loaded');
+        }
       }
       checkReady();
     };
@@ -313,22 +419,23 @@ function determineDimensions() {
   const wB = imgBData.naturalWidth;
   const hB = imgBData.naturalHeight;
 
-  // Exact same dimensions
-  if (wA === wB && hA === hB) {
-    let w = wA - (wA % 2);
-    let h = hA - (hA % 2);
-    return { width: Math.max(2, w), height: Math.max(2, h) };
+  let baseW = wA;
+  let baseH = hA;
+
+  if (wA !== wB || hA !== hB) {
+    const areaA = wA * hA;
+    const areaB = wB * hB;
+    baseW = areaA <= areaB ? wA : wB;
+    baseH = areaA <= areaB ? hA : hB;
   }
 
-  // Base canvas resolution on the smaller image (by area)
-  const areaA = wA * hA;
-  const areaB = wB * hB;
-  let targetW = areaA <= areaB ? wA : wB;
-  let targetH = areaA <= areaB ? hA : hB;
+  // Apply user-selected resolution scale (1.0, 0.75, 0.5)
+  let scaledW = Math.round(baseW * selectedScale);
+  let scaledH = Math.round(baseH * selectedScale);
 
-  let finalW = targetW - (targetW % 2);
-  let finalH = targetH - (targetH % 2);
-  return { width: Math.max(2, finalW), height: Math.max(2, finalH) };
+  scaledW = scaledW - (scaledW % 2);
+  scaledH = scaledH - (scaledH % 2);
+  return { width: Math.max(2, scaledW), height: Math.max(2, scaledH) };
 }
 
 // Scale down to fit within target canvas while maintaining aspect ratio and centering
@@ -393,6 +500,26 @@ function getDissolveThreshold(x, y) {
 }
 
 /**
+ * Applies linearity/easing curve to normalize transition progress t
+ * @param {number} t in [0, 1]
+ * @param {string} easing 'linear', 'smooth', 'ease-in', 'ease-out'
+ * @returns {number} eased progress in [0, 1]
+ */
+function applyEasing(t, easing) {
+  switch (easing) {
+    case 'smooth': // Smoothstep S-curve: slower near 0 and 1, faster in middle
+      return t * t * (3 - 2 * t);
+    case 'ease-in': // Quadratic ease-in: slow start, rapid finish
+      return t * t;
+    case 'ease-out': // Quadratic ease-out: rapid start, gentle finish
+      return 1 - (1 - t) * (1 - t);
+    case 'linear':
+    default:
+      return t;
+  }
+}
+
+/**
  * Generates RGBA byte buffers for each transition step between Image A and Image B
  * @param {Uint8ClampedArray} dataA
  * @param {Uint8ClampedArray} dataB
@@ -400,9 +527,10 @@ function getDissolveThreshold(x, y) {
  * @param {number} height
  * @param {number} steps
  * @param {number} mode
+ * @param {string} easing
  * @returns {Uint8Array[]} array of RGBA frame buffers
  */
-function generateIntermediateFrames(dataA, dataB, width, height, steps, mode) {
+function generateIntermediateFrames(dataA, dataB, width, height, steps, mode, easing = 'smooth') {
   const frames = [];
   const totalFrames = steps;
   const centerX = width * 0.5;
@@ -410,7 +538,8 @@ function generateIntermediateFrames(dataA, dataB, width, height, steps, mode) {
   const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
 
   for (let s = 0; s < totalFrames; ++s) {
-    const t = s / (totalFrames - 1);
+    const rawT = s / (totalFrames - 1);
+    const t = applyEasing(rawT, easing);
     const frame = new Uint8Array(width * height * 4);
 
     for (let y = 0; y < height; ++y) {
@@ -467,8 +596,10 @@ if (btnGenerate) {
 
     const steps = parseInt(stepInput.value, 10);
     const delayMs = parseInt(delayInput.value, 10);
-    const mode = parseInt(modeSelect.value, 10);
-    const bounce = bounceInput.checked;
+    const mode = selectedMode;
+    const easing = selectedEasing;
+    const colors = selectedColors;
+    const loopMode = selectedLoop;
 
     const { width, height } = determineDimensions();
 
@@ -478,24 +609,59 @@ if (btnGenerate) {
         const { dataA, dataB } = processImages(width, height);
         let gifBytes = null;
 
-        const intermediateFrames = generateIntermediateFrames(dataA, dataB, width, height, steps, mode);
+        // Base forward frames: A -> B
+        const forwardFrames = generateIntermediateFrames(dataA, dataB, width, height, steps, mode, easing);
 
-        let gifFrames = intermediateFrames;
-        if (bounce && intermediateFrames.length > 2) {
-          gifFrames = [...intermediateFrames];
-          for (let i = intermediateFrames.length - 2; i > 0; --i) {
-            gifFrames.push(intermediateFrames[i]);
+        // Build full animation sequence according to chosen loop mode
+        let gifFrames = [];
+        let phase1Frames = [];
+        let phase2Frames = [];
+        let phase1Title = 'A → B';
+        let phase2Title = '';
+
+        if (loopMode === 'a-to-b') {
+          gifFrames = [...forwardFrames];
+          phase1Frames = gifFrames;
+          phase1Title = 'A → B';
+        } else if (loopMode === 'b-to-a') {
+          // Dedicated B -> A transition with fresh speed start at B
+          const bToAFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
+          gifFrames = bToAFrames;
+          phase1Frames = gifFrames;
+          phase1Title = 'B → A';
+        } else if (loopMode === 'a-b-a') {
+          // A -> B -> A: Leg 1 eases A -> B; speed resets at B; Leg 2 eases B -> A
+          phase1Frames = [...forwardFrames];
+          phase1Title = 'A → B';
+          phase2Title = 'B → A';
+          gifFrames = [...forwardFrames];
+
+          const returnFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
+          // Omit duplicate endpoints (Frame 0 which is B, and last frame which is A)
+          if (returnFrames.length > 2) {
+            for (let i = 1; i < returnFrames.length - 1; ++i) {
+              gifFrames.push(returnFrames[i]);
+              phase2Frames.push(returnFrames[i]);
+            }
+          }
+        } else if (loopMode === 'b-a-b') {
+          // B -> A -> B: Leg 1 eases B -> A; speed resets at A; Leg 2 eases A -> B
+          const bToAFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
+          phase1Frames = [...bToAFrames];
+          phase1Title = 'B → A';
+          phase2Title = 'A → B';
+          gifFrames = [...bToAFrames];
+
+          const returnFrames = generateIntermediateFrames(dataA, dataB, width, height, steps, mode, easing);
+          if (returnFrames.length > 2) {
+            for (let i = 1; i < returnFrames.length - 1; ++i) {
+              gifFrames.push(returnFrames[i]);
+              phase2Frames.push(returnFrames[i]);
+            }
           }
         }
 
-        if (wasmModule && typeof wasmModule.createMorphGif === 'function') {
-          usedEngine = "C++20 WebAssembly";
-          const strA = String.fromCharCode.apply(null, dataA);
-          const strB = String.fromCharCode.apply(null, dataB);
-          gifBytes = wasmModule.createMorphGif(strA, strB, width, height, steps, delayMs, mode, bounce);
-        } else {
-          gifBytes = createFastGif(gifFrames, width, height, delayMs, true);
-        }
+        gifBytes = createFastGif(gifFrames, width, height, delayMs, colors, true);
 
         const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
         const blob = new Blob([gifBytes], { type: 'image/gif' });
@@ -508,36 +674,34 @@ if (btnGenerate) {
         btnDownload.download = `A2B_morph_${width}x${height}.gif`;
 
         const sizeMb = (blob.size / (1024 * 1024)).toFixed(2);
-        perfMetrics.textContent = `${steps} frames • ${width}×${height} px • ${sizeMb} MB • Generated in ${elapsed}s`;
+        perfMetrics.textContent = `${gifFrames.length} frames • ${width}×${height} px • ${sizeMb} MB • Generated in ${elapsed}s`;
 
-        // Populate Scrollable Steps Strip (with clear A->B and B->A bounce groupings)
+        // Populate Scrollable Steps Strip with grouped phases
         if (stepsStrip && stepsContainer) {
           stepsStrip.innerHTML = '';
-          const forwardCount = intermediateFrames.length;
-          const returnCount = bounce && intermediateFrames.length > 2 ? intermediateFrames.length - 2 : 0;
+          const hasPhase2 = phase2Frames.length > 0;
 
-          if (bounce && returnCount > 0) {
-            stepsCountLabel.textContent = `${forwardCount + returnCount} frames (${forwardCount} A→B + ${returnCount} B→A)`;
+          if (hasPhase2) {
+            stepsCountLabel.textContent = `${gifFrames.length} frames (${phase1Frames.length} ${phase1Title} + ${phase2Frames.length} ${phase2Title})`;
           } else {
-            stepsCountLabel.textContent = `${forwardCount} steps (A → B)`;
+            stepsCountLabel.textContent = `${gifFrames.length} frames (${phase1Title})`;
           }
 
           let addedDivider = false;
 
           gifFrames.forEach((frameBytes, idx) => {
-            const isReturn = bounce && idx >= forwardCount;
+            const isPhase2 = hasPhase2 && idx >= phase1Frames.length;
 
-            // Insert vertical visual divider before the return loop starts
-            if (isReturn && !addedDivider) {
+            if (isPhase2 && !addedDivider) {
               const divider = document.createElement('div');
               divider.className = 'step-divider';
-              divider.innerHTML = `<span>⟲ Return Loop<br>(B → A)</span>`;
+              divider.innerHTML = `<span>⟲ Return Loop<br>(${phase2Title})</span>`;
               stepsStrip.appendChild(divider);
               addedDivider = true;
             }
 
             const card = document.createElement('div');
-            card.className = isReturn ? 'step-card return' : 'step-card';
+            card.className = isPhase2 ? 'step-card return' : 'step-card';
 
             const canvas = document.createElement('canvas');
             canvas.width = width;
@@ -549,18 +713,16 @@ if (btnGenerate) {
             const meta = document.createElement('div');
             meta.className = 'step-meta';
 
-            if (!isReturn) {
-              const pct = Math.round((idx / (forwardCount - 1)) * 100);
-              meta.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">A→B (${pct}%)</span>`;
+            if (!isPhase2) {
+              const pct = Math.round((idx / (phase1Frames.length - 1)) * 100);
+              meta.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">${phase1Title} (${pct}%)</span>`;
             } else {
-              const returnIndex = idx - forwardCount + 1;
-              meta.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">B→A</span>`;
+              meta.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">${phase2Title}</span>`;
             }
 
             card.appendChild(canvas);
             card.appendChild(meta);
 
-            // Click step card to open inspector above the strip
             card.addEventListener('click', () => {
               showInspectedFrame(idx);
             });
@@ -572,8 +734,8 @@ if (btnGenerate) {
           currentRenderedFrames = gifFrames;
           currentFrameWidth = width;
           currentFrameHeight = height;
-          currentForwardCount = forwardCount;
-          currentBounce = bounce;
+          currentForwardCount = phase1Frames.length;
+          currentLoopMode = loopMode;
 
           stepsContainer.style.display = 'flex';
         }
@@ -615,13 +777,16 @@ function showInspectedFrame(index) {
   const imgData = new ImageData(new Uint8ClampedArray(frameBytes.buffer), currentFrameWidth, currentFrameHeight);
   ctx.putImageData(imgData, 0, 0);
 
-  // Update labels
-  const isReturn = currentBounce && index >= currentForwardCount;
-  if (!isReturn) {
+  // Update labels according to current loop mode
+  const isSecondPhase = (currentLoopMode === 'a-b-a' || currentLoopMode === 'b-a-b') && index >= currentForwardCount;
+  
+  if (!isSecondPhase) {
+    const dir = (currentLoopMode === 'b-to-a' || currentLoopMode === 'b-a-b') ? 'B &rarr; A' : 'A &rarr; B';
     const pct = Math.round((index / (currentForwardCount - 1)) * 100);
-    inspectorTitle.innerHTML = `Step #${index + 1} &bull; Forward (A &rarr; B) &bull; <span style="color:var(--accent)">${pct}%</span>`;
+    inspectorTitle.innerHTML = `Step #${index + 1} &bull; ${dir} &bull; <span style="color:var(--accent)">${pct}%</span>`;
   } else {
-    inspectorTitle.innerHTML = `Step #${index + 1} &bull; Return Loop (B &rarr; A)`;
+    const dir = currentLoopMode === 'a-b-a' ? 'B &rarr; A (Return)' : 'A &rarr; B (Return)';
+    inspectorTitle.innerHTML = `Step #${index + 1} &bull; ${dir}`;
   }
   inspectorCounter.textContent = `${index + 1} / ${currentRenderedFrames.length}`;
 

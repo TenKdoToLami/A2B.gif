@@ -23,12 +23,13 @@ Deployable on GitHub Pages directly through GitHub Actions.
   - `Radial Circle Wipe`: Center outward circular expansion
   - `Matrix Pixel Dissolve`: High-frequency noise dissolve
   - `Smooth Cubic Blend`: Cubic bezier eased interpolation
-- **Custom Controls**:
-  - Steps / intermediate frame count (4 to 100 frames)
-  - Frame delay (30 ms to 500 ms)
-  - Automatic native resolution & centered cropping
-  - Ping-Pong / Bounce loop mode (`A → B → A`)
-- **Drag & Drop UI**: Clean modern glassmorphic interface with real-time preview and instant download.
+- **Custom Categorized Controls**:
+  - **Transition Modes**: Crossfade, Horizontal Wipe, Vertical Wipe, Circle Wipe, Matrix Dissolve
+  - **Motion & Timing**: Steps (4 to 100), Frame Delay (30 to 500 ms), Linearity/Pacing (Linear, Smooth S-Curve, Ease-In, Ease-Out)
+  - **Quality & Optimization**: Color Depth (256, 128, 64 colors), Resolution Scale (100% Native, 75%, 50%)
+  - **Loop Direction**: `A → B`, `B → A`, `A → B → A`, `B → A → B`
+- **Interactive Step Inspector**: Click any frame to inspect in full resolution and cycle with keyboard `←` / `→` arrows.
+- **Drag & Drop UI**: Clean modern glassmorphic interface with persistent image headers, real-time preview, and instant download.
 
 ---
 

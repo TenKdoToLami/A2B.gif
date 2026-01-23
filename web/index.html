@@ -30,73 +30,172 @@
   </header>
 
   <main>
-    <!-- Image Drop Zones -->
+    <!-- Image Drop Zones with Persistent Headers -->
     <div class="upload-grid">
-      <div class="drop-zone" id="drop-zone-a">
-        <input type="file" id="file-a" accept="image/*">
-        <div class="drop-zone-content" id="zone-content-a">
-          <div class="drop-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
+      <!-- Container A -->
+      <div class="image-box">
+        <div class="box-header">
+          <div class="box-title">
+            <span class="label-badge label-a">A</span>
+            <strong>Start Image</strong>
           </div>
-          <h3>Start Image (A)</h3>
-          <p>Drop image here or click to browse</p>
+          <span class="meta-chip" id="meta-chip-a">No image</span>
         </div>
-        <img id="preview-a" class="preview" style="display:none;" alt="Preview Image A">
+        <div class="drop-zone" id="drop-zone-a">
+          <input type="file" id="file-a" accept="image/*">
+          <div class="drop-zone-content" id="zone-content-a">
+            <div class="drop-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <h3>Upload Image A</h3>
+            <p>Click or drag image file here</p>
+          </div>
+          <img id="preview-a" class="preview" style="display:none;" alt="Preview Image A">
+        </div>
       </div>
 
-      <div class="drop-zone" id="drop-zone-b">
-        <input type="file" id="file-b" accept="image/*">
-        <div class="drop-zone-content" id="zone-content-b">
-          <div class="drop-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
+      <!-- Container B -->
+      <div class="image-box">
+        <div class="box-header">
+          <div class="box-title">
+            <span class="label-badge label-b">B</span>
+            <strong>Target Image</strong>
           </div>
-          <h3>End Image (B)</h3>
-          <p>Drop image here or click to browse</p>
+          <span class="meta-chip" id="meta-chip-b">No image</span>
         </div>
-        <img id="preview-b" class="preview" style="display:none;" alt="Preview Image B">
+        <div class="drop-zone" id="drop-zone-b">
+          <input type="file" id="file-b" accept="image/*">
+          <div class="drop-zone-content" id="zone-content-b">
+            <div class="drop-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <h3>Upload Image B</h3>
+            <p>Click or drag image file here</p>
+          </div>
+          <img id="preview-b" class="preview" style="display:none;" alt="Preview Image B">
+        </div>
       </div>
     </div>
 
-    <!-- Controls -->
-    <div class="controls-card">
-      <div class="control-item">
-        <label for="step-count">Steps (Frames): <span class="val" id="step-val">16</span></label>
-        <input type="range" id="step-count" min="4" max="100" value="16" step="1">
-      </div>
+    <!-- Categorized Controls -->
+    <div class="categories-wrapper">
+      
+      <!-- Category 1: Transition Mode -->
+      <section class="config-card">
+        <div class="category-header">
+          <span class="cat-icon">🎨</span>
+          <h2>Transition Mode</h2>
+        </div>
+        <div class="mode-grid" id="mode-selector">
+          <button type="button" class="mode-btn active" data-mode="0">
+            <span class="m-title">Crossfade</span>
+            <span class="m-desc">Smooth blend</span>
+          </button>
+          <button type="button" class="mode-btn" data-mode="1">
+            <span class="m-title">Horizontal Wipe</span>
+            <span class="m-desc">Left to right</span>
+          </button>
+          <button type="button" class="mode-btn" data-mode="2">
+            <span class="m-title">Vertical Wipe</span>
+            <span class="m-desc">Top to bottom</span>
+          </button>
+          <button type="button" class="mode-btn" data-mode="3">
+            <span class="m-title">Circle Wipe</span>
+            <span class="m-desc">Radial expand</span>
+          </button>
+          <button type="button" class="mode-btn" data-mode="4">
+            <span class="m-title">Matrix Dissolve</span>
+            <span class="m-desc">Pixel dither</span>
+          </button>
+        </div>
+      </section>
 
-      <div class="control-item">
-        <label for="frame-delay">Frame Delay: <span class="val" id="delay-val">100 ms</span></label>
-        <input type="range" id="frame-delay" min="30" max="500" value="100" step="10">
-      </div>
+      <!-- Category 2: Motion & Timing -->
+      <section class="config-card">
+        <div class="category-header">
+          <span class="cat-icon">⚙️</span>
+          <h2>Motion & Timing</h2>
+        </div>
+        <div class="fields-grid">
+          <div class="control-item">
+            <label for="step-count">Steps (Frames): <span class="val" id="step-val">16</span></label>
+            <input type="range" id="step-count" min="4" max="100" value="16" step="1">
+          </div>
 
-      <div class="control-item">
-        <label for="transition-mode">Transition Mode</label>
-        <select id="transition-mode">
-          <option value="0">Crossfade (Linear)</option>
-          <option value="1">Horizontal Wipe (Left to Right)</option>
-          <option value="2">Vertical Wipe (Top to Bottom)</option>
-          <option value="3">Radial Circle Wipe</option>
-          <option value="4">Matrix Pixel Dissolve</option>
-          <option value="5">Smooth Cubic Blend</option>
-        </select>
-      </div>
+          <div class="control-item">
+            <label for="frame-delay">Frame Delay: <span class="val" id="delay-val">100 ms</span></label>
+            <input type="range" id="frame-delay" min="30" max="500" value="100" step="10">
+          </div>
 
+          <div class="control-item full-width">
+            <label>Linearity / Pacing (Easing)</label>
+            <div class="segmented-control" id="easing-selector">
+              <button type="button" class="seg-btn" data-easing="linear">Linear</button>
+              <button type="button" class="seg-btn active" data-easing="smooth">Smooth (S-Curve)</button>
+              <button type="button" class="seg-btn" data-easing="ease-in">Ease In (Slow Start)</button>
+              <button type="button" class="seg-btn" data-easing="ease-out">Ease Out (Slow End)</button>
+            </div>
+          </div>
+        </div>
+      </section>
 
+      <!-- Category 3: Quality & Size Optimization -->
+      <section class="config-card">
+        <div class="category-header">
+          <span class="cat-icon">💎</span>
+          <h2>Quality & Optimization</h2>
+        </div>
+        <div class="fields-grid">
+          <div class="control-item">
+            <label>Color Depth (Palette)</label>
+            <div class="segmented-control" id="colors-selector">
+              <button type="button" class="seg-btn active" data-colors="256">256 Colors</button>
+              <button type="button" class="seg-btn" data-colors="128">128 Colors</button>
+              <button type="button" class="seg-btn" data-colors="64">64 Colors</button>
+            </div>
+          </div>
 
-      <div class="control-item">
-        <label class="checkbox-group">
-          <input type="checkbox" id="bounce-mode" checked>
-          <span>Ping-Pong Loop (A → B → A)</span>
-        </label>
-      </div>
+          <div class="control-item">
+            <label>Resolution Scale</label>
+            <div class="segmented-control" id="scale-selector">
+              <button type="button" class="seg-btn active" data-scale="1.0">100% (Native)</button>
+              <button type="button" class="seg-btn" data-scale="0.75">75%</button>
+              <button type="button" class="seg-btn" data-scale="0.5">50% (Fast)</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Category 4: Loop Direction -->
+      <section class="config-card">
+        <div class="category-header">
+          <span class="cat-icon">🔁</span>
+          <h2>Loop Direction</h2>
+        </div>
+        <div class="segmented-control loop-segmented" id="loop-selector">
+          <button type="button" class="seg-btn" data-loop="a-to-b">
+            <span class="dir-icon">➔</span> A → B
+          </button>
+          <button type="button" class="seg-btn" data-loop="b-to-a">
+            <span class="dir-icon">➔</span> B → A
+          </button>
+          <button type="button" class="seg-btn active" data-loop="a-b-a">
+            <span class="dir-icon">⇄</span> A → B → A
+          </button>
+          <button type="button" class="seg-btn" data-loop="b-a-b">
+            <span class="dir-icon">⇄</span> B → A → B
+          </button>
+        </div>
+      </section>
+
     </div>
 
     <!-- Action button -->
