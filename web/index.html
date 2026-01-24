@@ -30,7 +30,84 @@
   </header>
 
   <main>
-    <!-- Image Drop Zones with Persistent Headers -->
+    <!-- Off-center side reference guide (plain text, does not push or shift the main app) -->
+    <aside class="side-reference" id="side-reference">
+      <div class="ref-section">
+        <h3 class="ref-title">Transition Modes</h3>
+        <dl class="ref-list">
+          <div class="ref-item">
+            <dt>Crossfade</dt>
+            <dd>Smooth linear alpha cross-dissolve interpolating RGB channels uniformly across intermediate frames.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Horizontal Wipe</dt>
+            <dd>Directional sweep revealing Target B with a soft feathered vertical dividing line from left to right.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Vertical Wipe</dt>
+            <dd>Directional curtain sweep revealing Target B with a feathered horizontal dividing line from top to bottom.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Circle Wipe</dt>
+            <dd>Radial circular mask expanding outward from canvas center across the diagonal reach.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Matrix Dissolve</dt>
+            <dd>Retro ordered dither dissolve using an 8×8 Bayer spatial matrix threshold for pixel-by-pixel handover.</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="ref-section">
+        <h3 class="ref-title">Motion & Linearity</h3>
+        <dl class="ref-list">
+          <div class="ref-item">
+            <dt>Linear</dt>
+            <dd>Constant transformation velocity with equal step progress between every frame.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Smooth (S-Curve)</dt>
+            <dd>Cosine acceleration easing gently out of the start state and decelerating smoothly into the destination.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Ease In</dt>
+            <dd>Slow acceleration out of image A, picking up speed toward image B.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Ease Out</dt>
+            <dd>Fast initial burst slowing down gently to settle softly into image B.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Bounce Loops</dt>
+            <dd>In A → B → A and B → A → B, speed resets to 0 at the turning point for natural two-way physics.</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="ref-section">
+        <h3 class="ref-title">Quality, Colors & Resolution</h3>
+        <dl class="ref-list">
+          <div class="ref-item">
+            <dt>256 Colors</dt>
+            <dd>Maximum GIF standard bit-depth. Preserves continuous gradients, smooth photographic skin tones, and rich lighting.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>128 / 64 Colors</dt>
+            <dd>Quantizes the palette to 7-bit or 6-bit color. Slashes file size by 30%–60% and gives graphic art or retro animations a crisp look.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Unequal Image Resolutions</dt>
+            <dd>When A and B have different dimensions, the larger image is automatically downscaled to fit the smaller image while preserving aspect ratio, centered against a dark neutral backing.</dd>
+          </div>
+          <div class="ref-item">
+            <dt>Resolution Scale (100% / 75% / 50%)</dt>
+            <dd>Multiplies overall frame canvas width and height. 50% scale generates 4× faster with up to 75% smaller file size.</dd>
+          </div>
+        </dl>
+      </div>
+    </aside>
+
+    <div class="studio-main">
     <div class="upload-grid">
       <!-- Container A -->
       <div class="image-box">
@@ -251,7 +328,8 @@
 
         <div class="steps-scroll" id="steps-strip"></div>
       </div>
-    </div>
+    </div> <!-- .output-card -->
+    </div> <!-- .studio-main -->
   </main>
 
   <footer>

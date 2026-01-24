@@ -253,6 +253,65 @@ let selectedColors = 256;
 let selectedScale = 1.0;
 let selectedLoop = 'a-b-a';
 
+// Guide & Mode Explanations Data
+const MODE_INFO = {
+  0: {
+    name: 'Crossfade',
+    desc: 'Smooth linear alpha cross-dissolve between pixels.',
+    algo: 'Interpolates RGB color channels uniformly across each intermediate step from 0% to 100%.',
+    use: [
+      'Portraits and face morphs',
+      'Natural landscape and lighting transitions',
+      'Similar object compositions'
+    ],
+    tip: 'Pair with Smooth (S-Curve) easing for natural acceleration and soft settling.'
+  },
+  1: {
+    name: 'Horizontal Wipe',
+    desc: 'Linear sweep revealing Target Image from left to right.',
+    algo: 'Advances a vertical dividing edge horizontally across width with smooth feathered pixel interpolation.',
+    use: [
+      'Before & After comparisons',
+      'Timeline and landscape progressions',
+      'UI component reveals'
+    ],
+    tip: 'Use shorter frame delays (50–80ms) for an energetic swipe velocity.'
+  },
+  2: {
+    name: 'Vertical Wipe',
+    desc: 'Directional sweep revealing Target Image from top to bottom.',
+    algo: 'Sweeps a horizontal soft line vertically downward from y=0 to y=height.',
+    use: [
+      'Mobile screenshots and web scroll showcases',
+      'Tall architectural photos',
+      'Curtain-fall transitions'
+    ],
+    tip: 'Excellent for vertical smartphone format images.'
+  },
+  3: {
+    name: 'Circle Wipe',
+    desc: 'Radial circular expansion expanding outward from center.',
+    algo: 'Expands a feathered circle centered on the canvas (x_mid, y_mid) from radius 0 to full diagonal reach.',
+    use: [
+      'Centered portraits and character icons',
+      'Logo and emblem morphs',
+      'Dramatic focal-point reveals'
+    ],
+    tip: 'Align the key subject of both images in the center for maximum visual impact.'
+  },
+  4: {
+    name: 'Matrix Dissolve',
+    desc: 'Ordered dither pixel dissolve using Bayer threshold matrix.',
+    algo: 'Applies an 8×8 Bayer spatial matrix combined with high-frequency noise for block-by-block pixel handover.',
+    use: [
+      'Retro video game and pixel art',
+      'Cyberpunk and sci-fi aesthetic',
+      'High-contrast graphics'
+    ],
+    tip: 'Combine with 64 or 128 colors for an authentic vintage arcade aesthetic.'
+  }
+};
+
 // Category 1: Mode Button Selector
 const modeBtns = document.querySelectorAll('.mode-btn');
 modeBtns.forEach(btn => {
