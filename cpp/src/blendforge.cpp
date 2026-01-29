@@ -92,10 +92,28 @@ std::vector<std::vector<uint8_t>> generate_frames(
                         blend = (t >= threshold) ? 1.0f : 0.0f;
                         break;
                     }
-                    case TransitionMode::ZoomBlend: {
-                        // Smooth cubic easing crossfade
-                        float ease_t = t * t * (3.0f - 2.0f * t);
-                        blend = ease_t;
+                    case TransitionMode::StrideSwap: {
+                        int pixel_idx = y * w + x;
+                        int bucket = (pixel_idx * 10007) % std::max(1, config.steps);
+                        blend = (bucket <= step) ? 1.0f : 0.0f;
+                        break;
+                    }
+                    case TransitionMode::FluidWarp: {
+                        float u = static_cast<float>(x) / static_cast<float>(w);
+                        float v = static_cast<float>(y) / static_cast<float>(h);
+                        float flow_x = std::sin(v * 7.5f + t * 4.0f) * std::cos(u * 5.0f);
+                        float flow_y = std::cos(u * 7.5f - t * 4.0f) * std::sin(v * 5.0f);
+                        float wave_pos = (flow_x + flow_y) * 0.25f + 0.5f;
+                        blend = std::clamp((t - wave_pos * 0.3f) / 0.7f, 0.0f, 1.0f);
+                        break;
+                    }
+                    case TransitionMode::ParticleDrift: {
+                        float u = static_cast<float>(x) / static_cast<float>(w);
+                        float v = static_cast<float>(y) / static_cast<float>(h);
+                        float lum_a = (0.299f * a_r + 0.587f * a_g + 0.114f * a_b) / 255.0f;
+                        float lum_b = (0.299f * b_r + 0.587f * b_g + 0.114f * b_b) / 255.0f;
+                        float diff = (lum_a - lum_b) * 0.5f;
+                        blend = std::clamp((t - (u + diff) * 0.3f) / 0.7f, 0.0f, 1.0f);
                         break;
                     }
                 }

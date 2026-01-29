@@ -309,6 +309,39 @@ const MODE_INFO = {
       'High-contrast graphics'
     ],
     tip: 'Combine with 64 or 128 colors for an authentic vintage arcade aesthetic.'
+  },
+  5: {
+    name: 'Stride Swap',
+    desc: 'Systematic stride-based pixel swap step by step.',
+    algo: 'Swaps every N-th pixel on step k with coprime spatial scattering, forming a fine digital weave.',
+    use: [
+      'Digital glitch aesthetics',
+      'Cyberpunk transitions',
+      'Geometric interlace reveals'
+    ],
+    tip: 'Higher step counts (30–60) produce an exceptionally dense crystalline lattice.'
+  },
+  6: {
+    name: 'Fluid Warp',
+    desc: 'Eulerian liquid flow distortion field.',
+    algo: 'Distorts pixel sampling coordinates along smooth trigonometric turbulence currents while blending.',
+    use: [
+      'Organic water, smoke, or cloud morphs',
+      'Abstract and artistic animations',
+      'Atmospheric landscape transitions'
+    ],
+    tip: 'Pair with Smooth (S-Curve) easing for gentle acceleration and silky liquid settling.'
+  },
+  7: {
+    name: 'Particle Drift',
+    desc: 'Lagrangian pixel transport based on luminance gradients.',
+    algo: 'Displaces pixels along directional flow vectors derived from image brightness gradients.',
+    use: [
+      'Dispersing sand and dust morphs',
+      'High-contrast silhouette transitions',
+      'Dynamic physical particle reveals'
+    ],
+    tip: 'Produces dramatic swirling motion between high-contrast light and dark compositions.'
   }
 };
 
@@ -579,6 +612,36 @@ function applyEasing(t, easing) {
 }
 
 /**
+ * Bilinear RGBA pixel sampler with edge clamp
+ */
+function sampleBilinear(data, width, height, x, y) {
+  const x0 = Math.max(0, Math.min(width - 1, Math.floor(x)));
+  const y0 = Math.max(0, Math.min(height - 1, Math.floor(y)));
+  const x1 = Math.max(0, Math.min(width - 1, x0 + 1));
+  const y1 = Math.max(0, Math.min(height - 1, y0 + 1));
+
+  const fx = Math.max(0, Math.min(1, x - x0));
+  const fy = Math.max(0, Math.min(1, y - y0));
+
+  const i00 = (y0 * width + x0) * 4;
+  const i10 = (y0 * width + x1) * 4;
+  const i01 = (y1 * width + x0) * 4;
+  const i11 = (y1 * width + x1) * 4;
+
+  const w00 = (1 - fx) * (1 - fy);
+  const w10 = fx * (1 - fy);
+  const w01 = (1 - fx) * fy;
+  const w11 = fx * fy;
+
+  return [
+    Math.round(data[i00] * w00 + data[i10] * w10 + data[i01] * w01 + data[i11] * w11),
+    Math.round(data[i00 + 1] * w00 + data[i10 + 1] * w10 + data[i01 + 1] * w01 + data[i11 + 1] * w11),
+    Math.round(data[i00 + 2] * w00 + data[i10 + 2] * w10 + data[i01 + 2] * w01 + data[i11 + 2] * w11),
+    Math.round(data[i00 + 3] * w00 + data[i10 + 3] * w10 + data[i01 + 3] * w01 + data[i11 + 3] * w11)
+  ];
+}
+
+/**
  * Generates RGBA byte buffers for each transition step between Image A and Image B
  * @param {Uint8ClampedArray} dataA
  * @param {Uint8ClampedArray} dataB
@@ -592,15 +655,114 @@ function applyEasing(t, easing) {
 function generateIntermediateFrames(dataA, dataB, width, height, steps, mode, easing = 'smooth') {
   const frames = [];
   const totalFrames = steps;
+  const totalPixels = width * height;
   const centerX = width * 0.5;
   const centerY = height * 0.5;
   const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+
+  // Precompute luminance map for Particle Drift (Mode 7) if selected
+  let lumA = null, lumB = null;
+  if (mode === 7) {
+    lumA = new Float32Array(totalPixels);
+    lumB = new Float32Array(totalPixels);
+    for (let i = 0; i < totalPixels; ++i) {
+      const idx = i * 4;
+      lumA[i] = (0.299 * dataA[idx] + 0.587 * dataA[idx + 1] + 0.114 * dataA[idx + 2]) / 255.0;
+      lumB[i] = (0.299 * dataB[idx] + 0.587 * dataB[idx + 1] + 0.114 * dataB[idx + 2]) / 255.0;
+    }
+  }
 
   for (let s = 0; s < totalFrames; ++s) {
     const rawT = s / (totalFrames - 1);
     const t = applyEasing(rawT, easing);
     const frame = new Uint8Array(width * height * 4);
 
+    // MODE 5: Stride Swap (Nth pixel swap step by step)
+    if (mode === 5) {
+      // At step s, any pixel whose (pixelIndex * prime) % steps <= s has transitioned to B
+      const prime = 10007;
+      for (let i = 0; i < totalPixels; ++i) {
+        const idx = i * 4;
+        const bucket = (i * prime) % steps;
+        const useB = bucket <= s;
+        frame[idx + 0] = useB ? dataB[idx + 0] : dataA[idx + 0];
+        frame[idx + 1] = useB ? dataB[idx + 1] : dataA[idx + 1];
+        frame[idx + 2] = useB ? dataB[idx + 2] : dataA[idx + 2];
+        frame[idx + 3] = useB ? dataB[idx + 3] : dataA[idx + 3];
+      }
+      frames.push(frame);
+      continue;
+    }
+
+    // MODE 6: Fluid Warp (Eulerian vector field turbulence)
+    if (mode === 6) {
+      const warpAmp = Math.sin(t * Math.PI) * 28.0; // Max fluid wave displacement in mid-transition
+      for (let y = 0; y < height; ++y) {
+        for (let x = 0; x < width; ++x) {
+          const idx = (y * width + x) * 4;
+          const u = x / width;
+          const v = y / height;
+
+          // Multi-frequency sinusoidal fluid curl vectors
+          const flowX = Math.sin(v * 7.5 + t * 4.0) * Math.cos(u * 5.0) + Math.cos(v * 14.0) * 0.4;
+          const flowY = Math.cos(u * 7.5 - t * 4.0) * Math.sin(v * 5.0) + Math.sin(u * 14.0) * 0.4;
+
+          // Image A drifts along forward fluid stream; Image B pulls in from reverse stream
+          const ax = x + flowX * warpAmp * (1.0 - t);
+          const ay = y + flowY * warpAmp * (1.0 - t);
+          const bx = x - flowX * warpAmp * t;
+          const by = y - flowY * warpAmp * t;
+
+          const pA = sampleBilinear(dataA, width, height, ax, ay);
+          const pB = sampleBilinear(dataB, width, height, bx, by);
+
+          for (let c = 0; c < 4; ++c) {
+            frame[idx + c] = Math.round(pA[c] + t * (pB[c] - pA[c]));
+          }
+        }
+      }
+      frames.push(frame);
+      continue;
+    }
+
+    // MODE 7: Particle Drift (Lagrangian brightness-guided pixel transport)
+    if (mode === 7) {
+      const driftAmp = Math.sin(t * Math.PI) * 35.0;
+      for (let y = 0; y < height; ++y) {
+        for (let x = 0; x < width; ++x) {
+          const idx = (y * width + x) * 4;
+          const pixIdx = y * width + x;
+
+          // Compute local luminance gradient for directional particle motion
+          const xNext = Math.min(width - 1, x + 1);
+          const yNext = Math.min(height - 1, y + 1);
+          const gradAx = (lumA[y * width + xNext] - lumA[pixIdx]);
+          const gradAy = (lumA[yNext * width + x] - lumA[pixIdx]);
+          const gradBx = (lumB[y * width + xNext] - lumB[pixIdx]);
+          const gradBy = (lumB[yNext * width + x] - lumB[pixIdx]);
+
+          const driftX = (gradAx - gradBx) * driftAmp;
+          const driftY = (gradAy - gradBy) * driftAmp;
+
+          // Disperse A particles outward, gather B particles into place
+          const ax = x + driftX * (1.0 - t);
+          const ay = y + driftY * (1.0 - t);
+          const bx = x - driftX * t;
+          const by = y - driftY * t;
+
+          const pA = sampleBilinear(dataA, width, height, ax, ay);
+          const pB = sampleBilinear(dataB, width, height, bx, by);
+
+          for (let c = 0; c < 4; ++c) {
+            frame[idx + c] = Math.round(pA[c] + t * (pB[c] - pA[c]));
+          }
+        }
+      }
+      frames.push(frame);
+      continue;
+    }
+
+    // Standard spatial and alpha transitions (Modes 0 to 4)
     for (let y = 0; y < height; ++y) {
       for (let x = 0; x < width; ++x) {
         const idx = (y * width + x) * 4;
@@ -624,10 +786,6 @@ function generateIntermediateFrames(dataA, dataB, width, height, steps, mode, ea
           }
           case 4: { // Matrix Dissolve
             blend = t >= getDissolveThreshold(x, y) ? 1.0 : 0.0;
-            break;
-          }
-          case 5: { // Smooth Cubic Blend
-            blend = t * t * (3 - 2 * t);
             break;
           }
           default: { // Crossfade

@@ -14,7 +14,9 @@ enum class TransitionMode {
     WipeTopToBottom = 2,
     CircleWipe = 3,
     PixelDissolve = 4,
-    ZoomBlend = 5
+    StrideSwap = 5,
+    FluidWarp = 6,
+    ParticleDrift = 7
 };
 
 struct TransitionConfig {

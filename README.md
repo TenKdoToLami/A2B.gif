@@ -21,10 +21,12 @@ Deployable on GitHub Pages directly through GitHub Actions.
   - `Horizontal Wipe`: Left-to-right directional wipe with feathered edges
   - `Vertical Wipe`: Top-to-bottom directional wipe
   - `Radial Circle Wipe`: Center outward circular expansion
-  - `Matrix Pixel Dissolve`: High-frequency noise dissolve
-  - `Smooth Cubic Blend`: Cubic bezier eased interpolation
+  - `Matrix Pixel Dissolve`: Bayer matrix dither dissolve
+  - `Stride Swap`: Systematic $N$-th pixel interleaved lattice swap step by step
+  - `Fluid Warp`: Eulerian vector field swirling pixels along procedural liquid currents
+  - `Particle Drift`: Lagrangian luminance-guided pixel transport
 - **Custom Categorized Controls**:
-  - **Transition Modes**: Crossfade, Horizontal Wipe, Vertical Wipe, Circle Wipe, Matrix Dissolve
+  - **Transition Modes**: Crossfade, Horizontal Wipe, Vertical Wipe, Circle Wipe, Matrix Dissolve, Stride Swap, Fluid Warp, Particle Drift
   - **Motion & Timing**: Steps (4 to 100), Frame Delay (30 to 500 ms), Linearity/Pacing (Linear, Smooth S-Curve, Ease-In, Ease-Out)
   - **Quality & Optimization**: Color Depth (256, 128, 64 colors), Resolution Scale (100% Native, 75%, 50%)
   - **Loop Direction**: `A → B`, `B → A`, `A → B → A`, `B → A → B`
