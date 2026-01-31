@@ -16,7 +16,9 @@ enum class TransitionMode {
     PixelDissolve = 4,
     StrideSwap = 5,
     FluidWarp = 6,
-    ParticleDrift = 7
+    ParticleDrift = 7,
+    VortexSpin = 8,
+    GlitchCRT = 9
 };
 
 struct TransitionConfig {

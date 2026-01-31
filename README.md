@@ -25,13 +25,22 @@ Deployable on GitHub Pages directly through GitHub Actions.
   - `Stride Swap`: Systematic $N$-th pixel interleaved lattice swap step by step
   - `Fluid Warp`: Eulerian vector field swirling pixels along procedural liquid currents
   - `Particle Drift`: Lagrangian luminance-guided pixel transport
+  - `Vortex Spin`: Archimedean spiral vortex rotational twist
+  - `Glitch CRT`: Analog VHS scanline jitter with RGB chromatic aberration
 - **Custom Categorized Controls**:
-  - **Transition Modes**: Crossfade, Horizontal Wipe, Vertical Wipe, Circle Wipe, Matrix Dissolve, Stride Swap, Fluid Warp, Particle Drift
-  - **Motion & Timing**: Steps (4 to 100), Frame Delay (30 to 500 ms), Linearity/Pacing (Linear, Smooth S-Curve, Ease-In, Ease-Out)
+  - **Quick Swap**: One-click $A \rightleftarrows B$ image swapper with instant preview refresh
+  - **Transition Modes**: 10 visual algorithms selectable via visual cards
+  - **Dual Timing Methods**: Seamless toggle between **Steps + Delay (ms)** and **Framerate (FPS) + Total Duration (s)**
+  - **Endpoint Hold Pauses**: Independent pause duration sliders for Image A and Image B (0 to 3.0s)
+  - **Linearity & Easing**: Linear, Smooth S-Curve, Ease-In, Ease-Out
   - **Quality & Optimization**: Color Depth (256, 128, 64 colors), Resolution Scale (100% Native, 75%, 50%)
   - **Loop Direction**: `A → B`, `B → A`, `A → B → A`, `B → A → B`
+- **Export & Utility Suite**:
+  - **GIF Download**: Direct LZW GIF output
+  - **Copy to Clipboard**: Instant 1-click clipboard copy for messaging apps
+  - **Animated Video / WebP**: High-efficiency WebM video stream export
+  - **Sprite Sheet PNG**: Grid-layout PNG sprite sheet generator for game engines and CSS
 - **Interactive Step Inspector**: Click any frame to inspect in full resolution and cycle with keyboard `←` / `→` arrows.
-- **Drag & Drop UI**: Clean modern glassmorphic interface with persistent image headers, real-time preview, and instant download.
 
 ---
 

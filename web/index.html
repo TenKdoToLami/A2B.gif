@@ -29,96 +29,104 @@
     </div>
   </header>
 
+  <!-- Off-center side reference guide (plain text, fixed/absolute in viewport margin) -->
+  <aside class="side-reference" id="side-reference">
+    <div class="ref-section">
+      <h3 class="ref-title">Transition Modes</h3>
+      <dl class="ref-list">
+        <div class="ref-item">
+          <dt>Crossfade</dt>
+          <dd>Smooth linear alpha cross-dissolve interpolating RGB channels uniformly across intermediate frames.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Horizontal Wipe</dt>
+          <dd>Directional sweep revealing Target B with a soft feathered vertical dividing line from left to right.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Vertical Wipe</dt>
+          <dd>Directional curtain sweep revealing Target B with a feathered horizontal dividing line from top to bottom.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Circle Wipe</dt>
+          <dd>Radial circular mask expanding outward from canvas center across the diagonal reach.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Matrix Dissolve</dt>
+          <dd>Retro ordered dither dissolve using an 8×8 Bayer spatial matrix threshold for pixel-by-pixel handover.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Stride Swap</dt>
+          <dd>Steps through pixels by stride offsets (every Nth pixel swapped per step) creating an interleaved digital lattice weave.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Fluid Warp</dt>
+          <dd>Eulerian vector field deformation swirling pixels along procedural liquid turbulence currents between A and B.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Particle Drift</dt>
+          <dd>Lagrangian particle transport displacing image blocks towards matching luminance coordinates like flowing sand.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Vortex Spin</dt>
+          <dd>Twists pixels inward into an angular Archimedean spiral vortex before smoothly unwinding into Target B.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Glitch CRT</dt>
+          <dd>Simulates analog VHS tape artifacts with RGB chromatic aberration separation and horizontal scanline jitter.</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="ref-section">
+      <h3 class="ref-title">Motion & Linearity</h3>
+      <dl class="ref-list">
+        <div class="ref-item">
+          <dt>Linear</dt>
+          <dd>Constant transformation velocity with equal step progress between every frame.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Smooth (S-Curve)</dt>
+          <dd>Cosine acceleration easing gently out of the start state and decelerating smoothly into the destination.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Ease In</dt>
+          <dd>Slow acceleration out of image A, picking up speed toward image B.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Ease Out</dt>
+          <dd>Fast initial burst slowing down gently to settle softly into image B.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Bounce Loops</dt>
+          <dd>In A → B → A and B → A → B, speed resets to 0 at the turning point for natural two-way physics.</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="ref-section">
+      <h3 class="ref-title">Quality, Colors & Resolution</h3>
+      <dl class="ref-list">
+        <div class="ref-item">
+          <dt>256 Colors</dt>
+          <dd>Maximum GIF standard bit-depth. Preserves continuous gradients, smooth photographic skin tones, and rich lighting.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>128 / 64 Colors</dt>
+          <dd>Quantizes the palette to 7-bit or 6-bit color. Slashes file size by 30%–60% and gives graphic art or retro animations a crisp look.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Unequal Image Resolutions</dt>
+          <dd>When A and B have different dimensions, the larger image is automatically downscaled to fit the smaller image while preserving aspect ratio, centered against a dark neutral backing.</dd>
+        </div>
+        <div class="ref-item">
+          <dt>Resolution Scale (100% / 75% / 50%)</dt>
+          <dd>Multiplies overall frame canvas width and height. 50% scale generates 4× faster with up to 75% smaller file size.</dd>
+        </div>
+      </dl>
+    </div>
+  </aside>
+
   <main>
-    <!-- Off-center side reference guide (plain text, does not push or shift the main app) -->
-    <aside class="side-reference" id="side-reference">
-      <div class="ref-section">
-        <h3 class="ref-title">Transition Modes</h3>
-        <dl class="ref-list">
-          <div class="ref-item">
-            <dt>Crossfade</dt>
-            <dd>Smooth linear alpha cross-dissolve interpolating RGB channels uniformly across intermediate frames.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Horizontal Wipe</dt>
-            <dd>Directional sweep revealing Target B with a soft feathered vertical dividing line from left to right.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Vertical Wipe</dt>
-            <dd>Directional curtain sweep revealing Target B with a feathered horizontal dividing line from top to bottom.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Circle Wipe</dt>
-            <dd>Radial circular mask expanding outward from canvas center across the diagonal reach.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Matrix Dissolve</dt>
-            <dd>Retro ordered dither dissolve using an 8×8 Bayer spatial matrix threshold for pixel-by-pixel handover.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Stride Swap</dt>
-            <dd>Steps through pixels by stride offsets (every Nth pixel swapped per step) creating an interleaved digital lattice weave.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Fluid Warp</dt>
-            <dd>Eulerian vector field deformation swirling pixels along procedural liquid turbulence currents between A and B.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Particle Drift</dt>
-            <dd>Lagrangian particle transport displacing image blocks towards matching luminance coordinates like flowing sand.</dd>
-          </div>
-        </dl>
-      </div>
-
-      <div class="ref-section">
-        <h3 class="ref-title">Motion & Linearity</h3>
-        <dl class="ref-list">
-          <div class="ref-item">
-            <dt>Linear</dt>
-            <dd>Constant transformation velocity with equal step progress between every frame.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Smooth (S-Curve)</dt>
-            <dd>Cosine acceleration easing gently out of the start state and decelerating smoothly into the destination.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Ease In</dt>
-            <dd>Slow acceleration out of image A, picking up speed toward image B.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Ease Out</dt>
-            <dd>Fast initial burst slowing down gently to settle softly into image B.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Bounce Loops</dt>
-            <dd>In A → B → A and B → A → B, speed resets to 0 at the turning point for natural two-way physics.</dd>
-          </div>
-        </dl>
-      </div>
-
-      <div class="ref-section">
-        <h3 class="ref-title">Quality, Colors & Resolution</h3>
-        <dl class="ref-list">
-          <div class="ref-item">
-            <dt>256 Colors</dt>
-            <dd>Maximum GIF standard bit-depth. Preserves continuous gradients, smooth photographic skin tones, and rich lighting.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>128 / 64 Colors</dt>
-            <dd>Quantizes the palette to 7-bit or 6-bit color. Slashes file size by 30%–60% and gives graphic art or retro animations a crisp look.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Unequal Image Resolutions</dt>
-            <dd>When A and B have different dimensions, the larger image is automatically downscaled to fit the smaller image while preserving aspect ratio, centered against a dark neutral backing.</dd>
-          </div>
-          <div class="ref-item">
-            <dt>Resolution Scale (100% / 75% / 50%)</dt>
-            <dd>Multiplies overall frame canvas width and height. 50% scale generates 4× faster with up to 75% smaller file size.</dd>
-          </div>
-        </dl>
-      </div>
-    </aside>
-
     <div class="studio-main">
     <div class="upload-grid">
       <!-- Container A -->
@@ -145,6 +153,16 @@
           </div>
           <img id="preview-a" class="preview" style="display:none;" alt="Preview Image A">
         </div>
+      </div>
+
+      <!-- Quick Swap A ⇄ B -->
+      <div class="swap-divider">
+        <button type="button" class="btn-swap" id="btn-swap-images" title="Swap Image A and Image B">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+          </svg>
+          <span>Swap A ⇄ B</span>
+        </button>
       </div>
 
       <!-- Container B -->
@@ -216,16 +234,35 @@
             <span class="m-title">Particle Drift</span>
             <span class="m-desc">Flowing pixel sand</span>
           </button>
+          <button type="button" class="mode-btn" data-mode="8">
+            <span class="m-title">Vortex Spin</span>
+            <span class="m-desc">Spiral twist vortex</span>
+          </button>
+          <button type="button" class="mode-btn" data-mode="9">
+            <span class="m-title">Glitch CRT</span>
+            <span class="m-desc">RGB scanline jitter</span>
+          </button>
         </div>
       </section>
 
       <!-- Category 2: Motion & Timing -->
       <section class="config-card">
-        <div class="category-header">
-          <span class="cat-icon">⚙️</span>
-          <h2>Motion & Timing</h2>
+        <div class="category-header category-header-split">
+          <div class="header-title-group">
+            <span class="cat-icon">⚙️</span>
+            <h2>Motion & Timing</h2>
+          </div>
+          <!-- Mode Switch: Delay + Steps vs FPS + Duration placed right next to each other -->
+          <div class="timing-mode-switch">
+            <div class="segmented-control" id="timing-mode-selector">
+              <button type="button" class="seg-btn active" data-timing-mode="steps-delay">Steps + Frame Delay</button>
+              <button type="button" class="seg-btn" data-timing-mode="fps-duration">FPS + Total Duration</button>
+            </div>
+          </div>
         </div>
-        <div class="fields-grid">
+
+        <!-- Timing Fields Container -->
+        <div class="fields-grid" id="timing-fields-steps">
           <div class="control-item">
             <label for="step-count">Steps (Frames): <span class="val" id="step-val">16</span></label>
             <input type="range" id="step-count" min="4" max="100" value="16" step="1">
@@ -234,6 +271,31 @@
           <div class="control-item">
             <label for="frame-delay">Frame Delay: <span class="val" id="delay-val">100 ms</span></label>
             <input type="range" id="frame-delay" min="30" max="500" value="100" step="10">
+          </div>
+        </div>
+
+        <div class="fields-grid" id="timing-fields-fps" style="display:none;">
+          <div class="control-item">
+            <label for="fps-rate">Framerate (FPS): <span class="val" id="fps-val">20 FPS</span></label>
+            <input type="range" id="fps-rate" min="5" max="50" value="20" step="1">
+          </div>
+
+          <div class="control-item">
+            <label for="anim-duration">Total Transition Duration: <span class="val" id="duration-val">1.5 s</span></label>
+            <input type="range" id="anim-duration" min="0.5" max="8.0" value="1.5" step="0.25">
+          </div>
+        </div>
+
+        <!-- Endpoint Hold Pauses -->
+        <div class="fields-grid">
+          <div class="control-item">
+            <label for="pause-a">Pause on Image A: <span class="val" id="pause-a-val">0.0 s</span></label>
+            <input type="range" id="pause-a" min="0" max="3.0" value="0.0" step="0.2">
+          </div>
+
+          <div class="control-item">
+            <label for="pause-b">Pause on Image B: <span class="val" id="pause-b-val">0.0 s</span></label>
+            <input type="range" id="pause-b" min="0" max="3.0" value="0.0" step="0.2">
           </div>
 
           <div class="control-item full-width">
@@ -315,7 +377,7 @@
       <div class="output-preview">
         <img id="gif-result" alt="Generated Morph GIF">
       </div>
-      <div class="actions">
+      <div class="actions output-actions-group">
         <a class="btn btn-primary" id="btn-download" download="A2B_morph.gif">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -324,6 +386,30 @@
           </svg>
           Download GIF
         </a>
+        <button type="button" class="btn btn-secondary" id="btn-copy-gif">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span id="copy-btn-text">Copy to Clipboard</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="btn-export-webp">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          Export WebP / Video
+        </button>
+        <button type="button" class="btn btn-secondary" id="btn-export-spritesheet">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Sprite Sheet PNG
+        </button>
       </div>
       <div class="status-badge" id="perf-metrics"></div>
 

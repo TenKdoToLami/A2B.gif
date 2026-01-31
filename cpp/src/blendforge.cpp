@@ -116,6 +116,21 @@ std::vector<std::vector<uint8_t>> generate_frames(
                         blend = std::clamp((t - (u + diff) * 0.3f) / 0.7f, 0.0f, 1.0f);
                         break;
                     }
+                    case TransitionMode::VortexSpin: {
+                        float dx = x - center_x;
+                        float dy = y - center_y;
+                        float dist = std::sqrt(dx * dx + dy * dy);
+                        float angle = std::atan2(dy, dx);
+                        float spiral = std::sin(angle * 3.0f + (1.0f - dist / max_dist) * 6.28f * t);
+                        blend = std::clamp(t * 1.2f - (spiral * 0.15f + 0.15f), 0.0f, 1.0f);
+                        break;
+                    }
+                    case TransitionMode::GlitchCRT: {
+                        float line_jitter = std::sin(static_cast<float>(y) * 12.3f + t * 45.0f);
+                        float jitter_mod = (std::abs(line_jitter) > 0.6f) ? 0.25f : 0.0f;
+                        blend = std::clamp(t + jitter_mod * (1.0f - t), 0.0f, 1.0f);
+                        break;
+                    }
                 }
 
                 frame[idx + 0] = lerp_channel(a_r, b_r, blend);

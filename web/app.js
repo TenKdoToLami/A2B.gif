@@ -342,6 +342,28 @@ const MODE_INFO = {
       'Dynamic physical particle reveals'
     ],
     tip: 'Produces dramatic swirling motion between high-contrast light and dark compositions.'
+  },
+  8: {
+    name: 'Vortex Spin',
+    desc: 'Archimedean spiral vortex rotational twist.',
+    algo: 'Rotates coordinates around canvas center proportional to distance, peaking at t=0.5.',
+    use: [
+      'Space, portal, and sci-fi transitions',
+      'Dynamic character spins',
+      'Stylized artistic logo reveals'
+    ],
+    tip: 'Align center points of both images for hypnotic rotational vortex symmetry.'
+  },
+  9: {
+    name: 'Glitch CRT',
+    desc: 'Analog VHS scanline jitter and RGB channel chromatic separation.',
+    algo: 'Applies horizontal pseudo-random scanline slippage with displaced R and B channels.',
+    use: [
+      'Cyberpunk and retro video games',
+      'Analog tape and security camera aesthetic',
+      'High-impact musical beats'
+    ],
+    tip: 'Use fast frame delay (40–70ms) for high-voltage glitch impact.'
   }
 };
 
@@ -418,15 +440,145 @@ let currentFrameHeight = 0;
 let currentForwardCount = 0;
 let currentLoopMode = 'a-b-a';
 
+// Timing Mode Switch State
+let timingMode = 'steps-delay'; // 'steps-delay' or 'fps-duration'
+const timingModeBtns = document.querySelectorAll('#timing-mode-selector .seg-btn');
+const fieldsSteps = document.getElementById('timing-fields-steps');
+const fieldsFps = document.getElementById('timing-fields-fps');
+const fpsInput = document.getElementById('fps-rate');
+const fpsVal = document.getElementById('fps-val');
+const durationInput = document.getElementById('anim-duration');
+const durationVal = document.getElementById('duration-val');
+
+const pauseAInput = document.getElementById('pause-a');
+const pauseAVal = document.getElementById('pause-a-val');
+const pauseBInput = document.getElementById('pause-b');
+const pauseBVal = document.getElementById('pause-b-val');
+const btnSwapImages = document.getElementById('btn-swap-images');
+
+timingModeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    timingModeBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    timingMode = btn.dataset.timingMode;
+
+    if (timingMode === 'steps-delay') {
+      fieldsSteps.style.display = 'grid';
+      fieldsFps.style.display = 'none';
+      syncFpsToSteps();
+    } else {
+      fieldsSteps.style.display = 'none';
+      fieldsFps.style.display = 'grid';
+      syncStepsToFps();
+    }
+  });
+});
+
+function syncStepsToFps() {
+  const steps = parseInt(stepInput.value, 10);
+  const delayMs = parseInt(delayInput.value, 10);
+  const totalDurationSec = (steps * delayMs) / 1000.0;
+  const fps = Math.round(1000.0 / Math.max(20, delayMs));
+
+  if (fpsInput) {
+    fpsInput.value = Math.max(5, Math.min(50, fps));
+    if (fpsVal) fpsVal.textContent = `${fpsInput.value} FPS`;
+  }
+  if (durationInput) {
+    durationInput.value = Math.max(0.5, Math.min(8.0, totalDurationSec)).toFixed(2);
+    if (durationVal) durationVal.textContent = `${durationInput.value} s`;
+  }
+}
+
+function syncFpsToSteps() {
+  const fps = parseInt(fpsInput.value, 10);
+  const dur = parseFloat(durationInput.value);
+  const steps = Math.max(4, Math.min(100, Math.round(fps * dur)));
+  const delayMs = Math.max(30, Math.min(500, Math.round(1000.0 / fps)));
+
+  if (stepInput) {
+    stepInput.value = steps;
+    if (stepVal) stepVal.textContent = steps;
+  }
+  if (delayInput) {
+    delayInput.value = delayMs;
+    if (delayVal) delayVal.textContent = `${delayMs} ms`;
+  }
+}
+
+if (fpsInput && fpsVal) {
+  fpsInput.addEventListener('input', () => {
+    fpsVal.textContent = `${fpsInput.value} FPS`;
+    syncFpsToSteps();
+  });
+}
+
+if (durationInput && durationVal) {
+  durationInput.addEventListener('input', () => {
+    durationVal.textContent = `${durationInput.value} s`;
+    syncFpsToSteps();
+  });
+}
+
+if (pauseAInput && pauseAVal) {
+  pauseAInput.addEventListener('input', () => {
+    pauseAVal.textContent = `${parseFloat(pauseAInput.value).toFixed(1)} s`;
+  });
+}
+
+if (pauseBInput && pauseBVal) {
+  pauseBInput.addEventListener('input', () => {
+    pauseBVal.textContent = `${parseFloat(pauseBInput.value).toFixed(1)} s`;
+  });
+}
+
+// Quick Swap A ⇄ B button handler
+if (btnSwapImages) {
+  btnSwapImages.addEventListener('click', () => {
+    if (!imgAData && !imgBData) return;
+
+    // Swap JS image objects
+    const tempImg = imgAData;
+    imgAData = imgBData;
+    imgBData = tempImg;
+
+    // Swap previews
+    const prevASrc = previewA.src;
+    const prevADisp = previewA.style.display;
+    const contADisp = contentA.style.display;
+    const dropAClass = dropA.classList.contains('has-image');
+    const chipAText = chipA.textContent;
+    const chipAClass = chipA.className;
+
+    previewA.src = previewB.src;
+    previewA.style.display = previewB.style.display;
+    contentA.style.display = contentB.style.display;
+    dropA.classList.toggle('has-image', dropB.classList.contains('has-image'));
+    chipA.textContent = chipB.textContent;
+    chipA.className = chipB.className;
+
+    previewB.src = prevASrc;
+    previewB.style.display = prevADisp;
+    contentB.style.display = contADisp;
+    dropB.classList.toggle('has-image', dropAClass);
+    chipB.textContent = chipAText;
+    chipB.className = chipAClass;
+
+    checkReady();
+  });
+}
+
 // Sliders listener
 if (stepInput && stepVal) {
   stepInput.addEventListener('input', () => {
     stepVal.textContent = stepInput.value;
+    syncStepsToFps();
   });
 }
 if (delayInput && delayVal) {
   delayInput.addEventListener('input', () => {
     delayVal.textContent = `${delayInput.value} ms`;
+    syncStepsToFps();
   });
 }
 
@@ -733,7 +885,6 @@ function generateIntermediateFrames(dataA, dataB, width, height, steps, mode, ea
           const idx = (y * width + x) * 4;
           const pixIdx = y * width + x;
 
-          // Compute local luminance gradient for directional particle motion
           const xNext = Math.min(width - 1, x + 1);
           const yNext = Math.min(height - 1, y + 1);
           const gradAx = (lumA[y * width + xNext] - lumA[pixIdx]);
@@ -744,7 +895,6 @@ function generateIntermediateFrames(dataA, dataB, width, height, steps, mode, ea
           const driftX = (gradAx - gradBx) * driftAmp;
           const driftY = (gradAy - gradBy) * driftAmp;
 
-          // Disperse A particles outward, gather B particles into place
           const ax = x + driftX * (1.0 - t);
           const ay = y + driftY * (1.0 - t);
           const bx = x - driftX * t;
@@ -756,6 +906,76 @@ function generateIntermediateFrames(dataA, dataB, width, height, steps, mode, ea
           for (let c = 0; c < 4; ++c) {
             frame[idx + c] = Math.round(pA[c] + t * (pB[c] - pA[c]));
           }
+        }
+      }
+      frames.push(frame);
+      continue;
+    }
+
+    // MODE 8: Vortex Spin (Archimedean spiral vortex rotational twist)
+    if (mode === 8) {
+      const angleMax = Math.sin(t * Math.PI) * Math.PI * 2.5; // Max 450 degree twist
+      for (let y = 0; y < height; ++y) {
+        for (let x = 0; x < width; ++x) {
+          const idx = (y * width + x) * 4;
+          const dx = x - centerX;
+          const dy = y - centerY;
+          const r = Math.sqrt(dx * dx + dy * dy);
+          const theta = Math.atan2(dy, dx);
+
+          const twist = angleMax * (1.0 - Math.min(1.0, r / maxDist));
+          const thetaA = theta + twist * (1.0 - t);
+          const thetaB = theta - twist * t;
+
+          const ax = centerX + r * Math.cos(thetaA);
+          const ay = centerY + r * Math.sin(thetaA);
+          const bx = centerX + r * Math.cos(thetaB);
+          const by = centerY + r * Math.sin(thetaB);
+
+          const pA = sampleBilinear(dataA, width, height, ax, ay);
+          const pB = sampleBilinear(dataB, width, height, bx, by);
+
+          for (let c = 0; c < 4; ++c) {
+            frame[idx + c] = Math.round(pA[c] + t * (pB[c] - pA[c]));
+          }
+        }
+      }
+      frames.push(frame);
+      continue;
+    }
+
+    // MODE 9: Glitch CRT (Analog VHS scanline jitter and chromatic aberration)
+    if (mode === 9) {
+      const glitchIntensity = Math.sin(t * Math.PI);
+      const chromaShift = Math.round(glitchIntensity * 14.0);
+      for (let y = 0; y < height; ++y) {
+        // Line-based jitter displacement
+        const lineNoise = Math.sin(y * 19.3 + t * 47.1) * Math.cos(y * 7.7 + t * 12.3);
+        const shiftX = Math.abs(lineNoise) > 0.6 ? Math.round(lineNoise * glitchIntensity * 32.0) : 0;
+
+        for (let x = 0; x < width; ++x) {
+          const idx = (y * width + x) * 4;
+          const sampleX = Math.max(0, Math.min(width - 1, x + shiftX));
+
+          // RGB chromatic channel splitting
+          const rX = Math.max(0, Math.min(width - 1, sampleX + chromaShift));
+          const bX = Math.max(0, Math.min(width - 1, sampleX - chromaShift));
+
+          const idxR = (y * width + rX) * 4;
+          const idxG = (y * width + sampleX) * 4;
+          const idxB = (y * width + bX) * 4;
+
+          const redA = dataA[idxR], redB = dataB[idxR];
+          const greenA = dataA[idxG + 1], greenB = dataB[idxG + 1];
+          const blueA = dataA[idxB + 2], blueB = dataB[idxB + 2];
+
+          // Scanline darkness modulation
+          const scanline = (y % 2 === 0) ? 0.92 : 1.0;
+
+          frame[idx + 0] = Math.round((redA + t * (redB - redA)) * scanline);
+          frame[idx + 1] = Math.round((greenA + t * (greenB - greenA)) * scanline);
+          frame[idx + 2] = Math.round((blueA + t * (blueB - blueA)) * scanline);
+          frame[idx + 3] = 255;
         }
       }
       frames.push(frame);
@@ -836,39 +1056,97 @@ if (btnGenerate) {
         let phase1Title = 'A → B';
         let phase2Title = '';
 
+        // Read endpoint pause durations
+        const pauseASec = pauseAInput ? parseFloat(pauseAInput.value) : 0;
+        const pauseBSec = pauseBInput ? parseFloat(pauseBInput.value) : 0;
+        const pauseAFramesCount = Math.round((pauseASec * 1000) / delayMs);
+        const pauseBFramesCount = Math.round((pauseBSec * 1000) / delayMs);
+
+        const frameA = forwardFrames[0];
+        const frameB = forwardFrames[forwardFrames.length - 1];
+
         if (loopMode === 'a-to-b') {
-          gifFrames = [...forwardFrames];
-          phase1Frames = gifFrames;
+          // A -> B: [Pause A] + [A -> B] + [Pause B]
+          phase1Frames = [...forwardFrames];
           phase1Title = 'A → B';
+
+          // Pause A at start
+          for (let p = 0; p < pauseAFramesCount; ++p) {
+            gifFrames.push(frameA);
+          }
+          // Morph A -> B
+          gifFrames.push(...forwardFrames);
+          // Pause B at end before loop wraps
+          for (let p = 0; p < pauseBFramesCount; ++p) {
+            gifFrames.push(frameB);
+          }
+
         } else if (loopMode === 'b-to-a') {
-          // Dedicated B -> A transition with fresh speed start at B
+          // B -> A: [Pause B] + [B -> A] + [Pause A]
           const bToAFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
-          gifFrames = bToAFrames;
-          phase1Frames = gifFrames;
+          phase1Frames = [...bToAFrames];
           phase1Title = 'B → A';
+
+          // Pause B at start
+          for (let p = 0; p < pauseBFramesCount; ++p) {
+            gifFrames.push(frameB);
+          }
+          // Morph B -> A
+          gifFrames.push(...bToAFrames);
+          // Pause A at end before loop wraps
+          for (let p = 0; p < pauseAFramesCount; ++p) {
+            gifFrames.push(frameA);
+          }
+
         } else if (loopMode === 'a-b-a') {
-          // A -> B -> A: Leg 1 eases A -> B; speed resets at B; Leg 2 eases B -> A
+          // A -> B -> A: [Pause A] + [A -> B] + [Pause B] + [B -> A (without duplicate endpoints or end pause)]
           phase1Frames = [...forwardFrames];
           phase1Title = 'A → B';
           phase2Title = 'B → A';
-          gifFrames = [...forwardFrames];
 
+          // Initial Pause on A
+          for (let p = 0; p < pauseAFramesCount; ++p) {
+            gifFrames.push(frameA);
+          }
+
+          // Leg 1: A -> B
+          gifFrames.push(...forwardFrames);
+
+          // Intermediate Pause on B at apex
+          for (let p = 0; p < pauseBFramesCount; ++p) {
+            gifFrames.push(frameB);
+          }
+
+          // Leg 2: B -> A (omit index 0 which is B and last index which is A so it loops seamlessly to Initial Pause A)
           const returnFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
-          // Omit duplicate endpoints (Frame 0 which is B, and last frame which is A)
           if (returnFrames.length > 2) {
             for (let i = 1; i < returnFrames.length - 1; ++i) {
               gifFrames.push(returnFrames[i]);
               phase2Frames.push(returnFrames[i]);
             }
           }
+
         } else if (loopMode === 'b-a-b') {
-          // B -> A -> B: Leg 1 eases B -> A; speed resets at A; Leg 2 eases A -> B
+          // B -> A -> B: [Pause B] + [B -> A] + [Pause A] + [A -> B (without duplicate endpoints or end pause)]
           const bToAFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
           phase1Frames = [...bToAFrames];
           phase1Title = 'B → A';
           phase2Title = 'A → B';
-          gifFrames = [...bToAFrames];
 
+          // Initial Pause on B
+          for (let p = 0; p < pauseBFramesCount; ++p) {
+            gifFrames.push(frameB);
+          }
+
+          // Leg 1: B -> A
+          gifFrames.push(...bToAFrames);
+
+          // Intermediate Pause on A at apex
+          for (let p = 0; p < pauseAFramesCount; ++p) {
+            gifFrames.push(frameA);
+          }
+
+          // Leg 2: A -> B (omit index 0 which is A and last index which is B so it loops seamlessly to Initial Pause B)
           const returnFrames = generateIntermediateFrames(dataA, dataB, width, height, steps, mode, easing);
           if (returnFrames.length > 2) {
             for (let i = 1; i < returnFrames.length - 1; ++i) {
@@ -877,7 +1155,6 @@ if (btnGenerate) {
             }
           }
         }
-
         gifBytes = createFastGif(gifFrames, width, height, delayMs, colors, true);
 
         const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
@@ -1064,5 +1341,141 @@ window.addEventListener('keydown', (e) => {
     }
   }
 });
+
+// ==========================================
+// 4. EXPORT & UTILITY ACTIONS
+// ==========================================
+const btnCopyGif = document.getElementById('btn-copy-gif');
+const copyBtnText = document.getElementById('copy-btn-text');
+const btnExportWebp = document.getElementById('btn-export-webp');
+const btnExportSpritesheet = document.getElementById('btn-export-spritesheet');
+
+// Copy GIF to Clipboard
+if (btnCopyGif) {
+  btnCopyGif.addEventListener('click', async () => {
+    if (!activeBlobUrl) return;
+    try {
+      btnCopyGif.disabled = true;
+      copyBtnText.textContent = 'Copying...';
+      const response = await fetch(activeBlobUrl);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/gif': blob })
+      ]);
+      copyBtnText.textContent = '✓ Copied!';
+      setTimeout(() => {
+        copyBtnText.textContent = 'Copy to Clipboard';
+        btnCopyGif.disabled = false;
+      }, 2000);
+    } catch (err) {
+      console.warn('Clipboard write failed:', err);
+      // Fallback: copy blob URL
+      try {
+        await navigator.clipboard.writeText(location.href);
+        copyBtnText.textContent = 'Link Copied!';
+      } catch {
+        copyBtnText.textContent = 'Copy not supported';
+      }
+      setTimeout(() => {
+        copyBtnText.textContent = 'Copy to Clipboard';
+        btnCopyGif.disabled = false;
+      }, 2000);
+    }
+  });
+}
+
+// Export Sprite Sheet PNG (Grid layout)
+if (btnExportSpritesheet) {
+  btnExportSpritesheet.addEventListener('click', () => {
+    if (!currentRenderedFrames || currentRenderedFrames.length === 0) return;
+
+    const total = currentRenderedFrames.length;
+    const cols = Math.min(10, Math.ceil(Math.sqrt(total)));
+    const rows = Math.ceil(total / cols);
+
+    const sheetCanvas = document.createElement('canvas');
+    sheetCanvas.width = cols * currentFrameWidth;
+    sheetCanvas.height = rows * currentFrameHeight;
+    const sheetCtx = sheetCanvas.getContext('2d');
+
+    currentRenderedFrames.forEach((frameBytes, idx) => {
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = currentFrameWidth;
+      tempCanvas.height = currentFrameHeight;
+      const tempCtx = tempCanvas.getContext('2d');
+      const imgData = new ImageData(new Uint8ClampedArray(frameBytes.buffer), currentFrameWidth, currentFrameHeight);
+      tempCtx.putImageData(imgData, 0, 0);
+
+      sheetCtx.drawImage(tempCanvas, col * currentFrameWidth, row * currentFrameHeight);
+    });
+
+    const link = document.createElement('a');
+    link.download = `A2B_spritesheet_${total}frames.png`;
+    link.href = sheetCanvas.toDataURL('image/png');
+    link.click();
+  });
+}
+
+// Export Animated Video (WebM / MP4 via MediaRecorder)
+if (btnExportWebp) {
+  btnExportWebp.addEventListener('click', () => {
+    if (!currentRenderedFrames || currentRenderedFrames.length === 0) return;
+
+    btnExportWebp.disabled = true;
+    const origText = btnExportWebp.innerHTML;
+    btnExportWebp.innerHTML = `<span class="spinner"></span> Encoding Video...`;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = currentFrameWidth;
+    canvas.height = currentFrameHeight;
+    const ctx = canvas.getContext('2d');
+
+    const stream = canvas.captureStream(30);
+    let mimeType = 'video/webm;codecs=vp9';
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'video/webm';
+    }
+
+    const recorder = new MediaRecorder(stream, { mimeType });
+    const chunks = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const videoBlob = new Blob(chunks, { type: mimeType });
+      const videoUrl = URL.createObjectURL(videoBlob);
+      const a = document.createElement('a');
+      a.href = videoUrl;
+      a.download = `A2B_animation_${currentFrameWidth}x${currentFrameHeight}.webm`;
+      a.click();
+
+      btnExportWebp.innerHTML = origText;
+      btnExportWebp.disabled = false;
+    };
+
+    recorder.start();
+
+    // Render frames sequentially to canvas stream
+    const delay = parseInt(delayInput.value, 10) || 100;
+    let fIdx = 0;
+
+    function renderNext() {
+      if (fIdx >= currentRenderedFrames.length) {
+        setTimeout(() => recorder.stop(), delay);
+        return;
+      }
+      const frameBytes = currentRenderedFrames[fIdx++];
+      const imgData = new ImageData(new Uint8ClampedArray(frameBytes.buffer), currentFrameWidth, currentFrameHeight);
+      ctx.putImageData(imgData, 0, 0);
+      setTimeout(renderNext, delay);
+    }
+
+    renderNext();
+  });
+}
 
 initWasm();
