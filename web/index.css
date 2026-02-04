@@ -891,6 +891,27 @@ input[type="range"] {
   color: #38bdf8;
 }
 
+.step-card.hold {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.step-card.hold:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25);
+}
+
+.step-card.hold .step-pct {
+  color: #fbbf24;
+}
+
+.step-card.return.hold {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.step-card.return.hold .step-pct {
+  color: #fbbf24;
+}
+
 .step-divider {
   display: flex;
   flex-direction: column;

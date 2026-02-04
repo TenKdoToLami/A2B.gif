@@ -435,6 +435,7 @@ const inspectorCanvas = document.getElementById('inspector-canvas');
 
 let currentInspectedIndex = -1;
 let currentRenderedFrames = [];
+let currentFramesMeta = [];
 let currentFrameWidth = 0;
 let currentFrameHeight = 0;
 let currentForwardCount = 0;
@@ -1051,10 +1052,11 @@ if (btnGenerate) {
 
         // Build full animation sequence according to chosen loop mode
         let gifFrames = [];
-        let phase1Frames = [];
-        let phase2Frames = [];
+        let framesMeta = [];
         let phase1Title = 'A → B';
         let phase2Title = '';
+        let phase1Count = 0;
+        let phase2Count = 0;
 
         // Read endpoint pause durations
         const pauseASec = pauseAInput ? parseFloat(pauseAInput.value) : 0;
@@ -1067,93 +1069,233 @@ if (btnGenerate) {
 
         if (loopMode === 'a-to-b') {
           // A -> B: [Pause A] + [A -> B] + [Pause B]
-          phase1Frames = [...forwardFrames];
           phase1Title = 'A → B';
 
           // Pause A at start
           for (let p = 0; p < pauseAFramesCount; ++p) {
             gifFrames.push(frameA);
+            framesMeta.push({
+              phase: 'hold-a',
+              isHold: true,
+              isReturn: false,
+              isDividerBefore: false,
+              label: pauseAFramesCount > 1 ? `Hold A (#${p + 1})` : 'Hold A',
+              inspectorTitle: `Step #${gifFrames.length} &bull; Hold Image A &bull; <span style="color:#fbbf24">${pauseASec.toFixed(1)}s pause</span>`
+            });
           }
+
           // Morph A -> B
-          gifFrames.push(...forwardFrames);
+          forwardFrames.forEach((frameBytes, i) => {
+            const pct = Math.round((i / (forwardFrames.length - 1)) * 100);
+            gifFrames.push(frameBytes);
+            framesMeta.push({
+              phase: 'forward',
+              isHold: false,
+              isReturn: false,
+              isDividerBefore: false,
+              label: `A → B (${pct}%)`,
+              inspectorTitle: `Step #${gifFrames.length} &bull; A &rarr; B &bull; <span style="color:var(--primary)">${pct}%</span>`
+            });
+          });
+
           // Pause B at end before loop wraps
           for (let p = 0; p < pauseBFramesCount; ++p) {
             gifFrames.push(frameB);
+            framesMeta.push({
+              phase: 'hold-b',
+              isHold: true,
+              isReturn: false,
+              isDividerBefore: false,
+              label: pauseBFramesCount > 1 ? `Hold B (#${p + 1})` : 'Hold B',
+              inspectorTitle: `Step #${gifFrames.length} &bull; Hold Image B &bull; <span style="color:#fbbf24">${pauseBSec.toFixed(1)}s pause</span>`
+            });
           }
+
+          phase1Count = gifFrames.length;
 
         } else if (loopMode === 'b-to-a') {
           // B -> A: [Pause B] + [B -> A] + [Pause A]
           const bToAFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
-          phase1Frames = [...bToAFrames];
           phase1Title = 'B → A';
 
           // Pause B at start
           for (let p = 0; p < pauseBFramesCount; ++p) {
             gifFrames.push(frameB);
+            framesMeta.push({
+              phase: 'hold-b',
+              isHold: true,
+              isReturn: false,
+              isDividerBefore: false,
+              label: pauseBFramesCount > 1 ? `Hold B (#${p + 1})` : 'Hold B',
+              inspectorTitle: `Step #${gifFrames.length} &bull; Hold Image B &bull; <span style="color:#fbbf24">${pauseBSec.toFixed(1)}s pause</span>`
+            });
           }
+
           // Morph B -> A
-          gifFrames.push(...bToAFrames);
+          bToAFrames.forEach((frameBytes, i) => {
+            const pct = Math.round((i / (bToAFrames.length - 1)) * 100);
+            gifFrames.push(frameBytes);
+            framesMeta.push({
+              phase: 'forward',
+              isHold: false,
+              isReturn: false,
+              isDividerBefore: false,
+              label: `B → A (${pct}%)`,
+              inspectorTitle: `Step #${gifFrames.length} &bull; B &rarr; A &bull; <span style="color:var(--primary)">${pct}%</span>`
+            });
+          });
+
           // Pause A at end before loop wraps
           for (let p = 0; p < pauseAFramesCount; ++p) {
             gifFrames.push(frameA);
+            framesMeta.push({
+              phase: 'hold-a',
+              isHold: true,
+              isReturn: false,
+              isDividerBefore: false,
+              label: pauseAFramesCount > 1 ? `Hold A (#${p + 1})` : 'Hold A',
+              inspectorTitle: `Step #${gifFrames.length} &bull; Hold Image A &bull; <span style="color:#fbbf24">${pauseASec.toFixed(1)}s pause</span>`
+            });
           }
 
+          phase1Count = gifFrames.length;
+
         } else if (loopMode === 'a-b-a') {
-          // A -> B -> A: [Pause A] + [A -> B] + [Pause B] + [B -> A (without duplicate endpoints or end pause)]
-          phase1Frames = [...forwardFrames];
+          // A -> B -> A: [Pause A] + [A -> B] + [Pause B (Holdout Apex)] + [B -> A (without duplicate endpoints or end pause)]
           phase1Title = 'A → B';
           phase2Title = 'B → A';
 
           // Initial Pause on A
           for (let p = 0; p < pauseAFramesCount; ++p) {
             gifFrames.push(frameA);
+            framesMeta.push({
+              phase: 'hold-a',
+              isHold: true,
+              isReturn: false,
+              isDividerBefore: false,
+              label: pauseAFramesCount > 1 ? `Hold A (#${p + 1})` : 'Hold A',
+              inspectorTitle: `Step #${gifFrames.length} &bull; Hold Image A &bull; <span style="color:#fbbf24">${pauseASec.toFixed(1)}s pause</span>`
+            });
           }
 
           // Leg 1: A -> B
-          gifFrames.push(...forwardFrames);
+          forwardFrames.forEach((frameBytes, i) => {
+            const pct = Math.round((i / (forwardFrames.length - 1)) * 100);
+            gifFrames.push(frameBytes);
+            framesMeta.push({
+              phase: 'forward',
+              isHold: false,
+              isReturn: false,
+              isDividerBefore: false,
+              label: `A → B (${pct}%)`,
+              inspectorTitle: `Step #${gifFrames.length} &bull; A &rarr; B &bull; <span style="color:var(--primary)">${pct}%</span>`
+            });
+          });
 
-          // Intermediate Pause on B at apex
+          phase1Count = gifFrames.length;
+
+          // Leg 2: Holdout B at apex + return morph B -> A
+          const returnFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
+
+          // Intermediate Pause on B at apex (Holdout on B)
           for (let p = 0; p < pauseBFramesCount; ++p) {
             gifFrames.push(frameB);
+            framesMeta.push({
+              phase: 'hold-b',
+              isHold: true,
+              isReturn: true,
+              isDividerBefore: (p === 0), // Divider right before the holdout image on B
+              label: pauseBFramesCount > 1 ? `Holdout B (#${p + 1})` : 'Holdout B (Apex)',
+              inspectorTitle: `Step #${gifFrames.length} &bull; Holdout on B (Apex) &bull; <span style="color:#fbbf24">${pauseBSec.toFixed(1)}s pause</span>`
+            });
           }
 
           // Leg 2: B -> A (omit index 0 which is B and last index which is A so it loops seamlessly to Initial Pause A)
-          const returnFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
           if (returnFrames.length > 2) {
             for (let i = 1; i < returnFrames.length - 1; ++i) {
+              const pct = Math.round((i / (returnFrames.length - 1)) * 100);
               gifFrames.push(returnFrames[i]);
-              phase2Frames.push(returnFrames[i]);
+              framesMeta.push({
+                phase: 'return',
+                isHold: false,
+                isReturn: true,
+                isDividerBefore: (pauseBFramesCount === 0 && i === 1), // If no pause on B, divider right before return
+                label: `B → A (${pct}%)`,
+                inspectorTitle: `Step #${gifFrames.length} &bull; B &rarr; A (Return) &bull; <span style="color:var(--accent)">${pct}%</span>`
+              });
             }
           }
 
+          phase2Count = gifFrames.length - phase1Count;
+
         } else if (loopMode === 'b-a-b') {
-          // B -> A -> B: [Pause B] + [B -> A] + [Pause A] + [A -> B (without duplicate endpoints or end pause)]
+          // B -> A -> B: [Pause B] + [B -> A] + [Pause A (Holdout Apex)] + [A -> B (without duplicate endpoints or end pause)]
           const bToAFrames = generateIntermediateFrames(dataB, dataA, width, height, steps, mode, easing);
-          phase1Frames = [...bToAFrames];
           phase1Title = 'B → A';
           phase2Title = 'A → B';
 
           // Initial Pause on B
           for (let p = 0; p < pauseBFramesCount; ++p) {
             gifFrames.push(frameB);
+            framesMeta.push({
+              phase: 'hold-b',
+              isHold: true,
+              isReturn: false,
+              isDividerBefore: false,
+              label: pauseBFramesCount > 1 ? `Hold B (#${p + 1})` : 'Hold B',
+              inspectorTitle: `Step #${gifFrames.length} &bull; Hold Image B &bull; <span style="color:#fbbf24">${pauseBSec.toFixed(1)}s pause</span>`
+            });
           }
 
           // Leg 1: B -> A
-          gifFrames.push(...bToAFrames);
+          bToAFrames.forEach((frameBytes, i) => {
+            const pct = Math.round((i / (bToAFrames.length - 1)) * 100);
+            gifFrames.push(frameBytes);
+            framesMeta.push({
+              phase: 'forward',
+              isHold: false,
+              isReturn: false,
+              isDividerBefore: false,
+              label: `B → A (${pct}%)`,
+              inspectorTitle: `Step #${gifFrames.length} &bull; B &rarr; A &bull; <span style="color:var(--primary)">${pct}%</span>`
+            });
+          });
 
-          // Intermediate Pause on A at apex
+          phase1Count = gifFrames.length;
+
+          // Leg 2: Holdout A at apex + return morph A -> B
+          const returnFrames = generateIntermediateFrames(dataA, dataB, width, height, steps, mode, easing);
+
+          // Intermediate Pause on A at apex (Holdout on A)
           for (let p = 0; p < pauseAFramesCount; ++p) {
             gifFrames.push(frameA);
+            framesMeta.push({
+              phase: 'hold-a',
+              isHold: true,
+              isReturn: true,
+              isDividerBefore: (p === 0), // Divider right before the holdout image on A
+              label: pauseAFramesCount > 1 ? `Holdout A (#${p + 1})` : 'Holdout A (Apex)',
+              inspectorTitle: `Step #${gifFrames.length} &bull; Holdout on A (Apex) &bull; <span style="color:#fbbf24">${pauseASec.toFixed(1)}s pause</span>`
+            });
           }
 
           // Leg 2: A -> B (omit index 0 which is A and last index which is B so it loops seamlessly to Initial Pause B)
-          const returnFrames = generateIntermediateFrames(dataA, dataB, width, height, steps, mode, easing);
           if (returnFrames.length > 2) {
             for (let i = 1; i < returnFrames.length - 1; ++i) {
+              const pct = Math.round((i / (returnFrames.length - 1)) * 100);
               gifFrames.push(returnFrames[i]);
-              phase2Frames.push(returnFrames[i]);
+              framesMeta.push({
+                phase: 'return',
+                isHold: false,
+                isReturn: true,
+                isDividerBefore: (pauseAFramesCount === 0 && i === 1), // If no pause on A, divider right before return
+                label: `A → B (${pct}%)`,
+                inspectorTitle: `Step #${gifFrames.length} &bull; A &rarr; B (Return) &bull; <span style="color:var(--accent)">${pct}%</span>`
+              });
             }
           }
+
+          phase2Count = gifFrames.length - phase1Count;
         }
         gifBytes = createFastGif(gifFrames, width, height, delayMs, colors, true);
 
@@ -1173,29 +1315,29 @@ if (btnGenerate) {
         // Populate Scrollable Steps Strip with grouped phases
         if (stepsStrip && stepsContainer) {
           stepsStrip.innerHTML = '';
-          const hasPhase2 = phase2Frames.length > 0;
+          const hasPhase2 = phase2Count > 0;
 
           if (hasPhase2) {
-            stepsCountLabel.textContent = `${gifFrames.length} frames (${phase1Frames.length} ${phase1Title} + ${phase2Frames.length} ${phase2Title})`;
+            stepsCountLabel.textContent = `${gifFrames.length} frames (${phase1Count} ${phase1Title} + ${phase2Count} ${phase2Title})`;
           } else {
             stepsCountLabel.textContent = `${gifFrames.length} frames (${phase1Title})`;
           }
 
-          let addedDivider = false;
-
           gifFrames.forEach((frameBytes, idx) => {
-            const isPhase2 = hasPhase2 && idx >= phase1Frames.length;
+            const meta = framesMeta[idx];
 
-            if (isPhase2 && !addedDivider) {
+            if (meta && meta.isDividerBefore) {
               const divider = document.createElement('div');
               divider.className = 'step-divider';
               divider.innerHTML = `<span>⟲ Return Loop<br>(${phase2Title})</span>`;
               stepsStrip.appendChild(divider);
-              addedDivider = true;
             }
 
             const card = document.createElement('div');
-            card.className = isPhase2 ? 'step-card return' : 'step-card';
+            let cardClass = 'step-card';
+            if (meta && meta.isReturn) cardClass += ' return';
+            if (meta && meta.isHold) cardClass += ' hold';
+            card.className = cardClass;
 
             const canvas = document.createElement('canvas');
             canvas.width = width;
@@ -1204,18 +1346,13 @@ if (btnGenerate) {
             const imgData = new ImageData(new Uint8ClampedArray(frameBytes.buffer), width, height);
             ctx.putImageData(imgData, 0, 0);
 
-            const meta = document.createElement('div');
-            meta.className = 'step-meta';
-
-            if (!isPhase2) {
-              const pct = Math.round((idx / (phase1Frames.length - 1)) * 100);
-              meta.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">${phase1Title} (${pct}%)</span>`;
-            } else {
-              meta.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">${phase2Title}</span>`;
-            }
+            const metaEl = document.createElement('div');
+            metaEl.className = 'step-meta';
+            const labelText = meta ? meta.label : `#${idx + 1}`;
+            metaEl.innerHTML = `<span class="step-num">#${idx + 1}</span><span class="step-pct">${labelText}</span>`;
 
             card.appendChild(canvas);
-            card.appendChild(meta);
+            card.appendChild(metaEl);
 
             card.addEventListener('click', () => {
               showInspectedFrame(idx);
@@ -1226,9 +1363,10 @@ if (btnGenerate) {
 
           // Save current state for inspector
           currentRenderedFrames = gifFrames;
+          currentFramesMeta = framesMeta;
           currentFrameWidth = width;
           currentFrameHeight = height;
-          currentForwardCount = phase1Frames.length;
+          currentForwardCount = phase1Count;
           currentLoopMode = loopMode;
 
           stepsContainer.style.display = 'flex';
@@ -1263,6 +1401,7 @@ function showInspectedFrame(index) {
 
   currentInspectedIndex = index;
   const frameBytes = currentRenderedFrames[index];
+  const meta = currentFramesMeta ? currentFramesMeta[index] : null;
 
   // Render on inspector canvas
   inspectorCanvas.width = currentFrameWidth;
@@ -1271,16 +1410,11 @@ function showInspectedFrame(index) {
   const imgData = new ImageData(new Uint8ClampedArray(frameBytes.buffer), currentFrameWidth, currentFrameHeight);
   ctx.putImageData(imgData, 0, 0);
 
-  // Update labels according to current loop mode
-  const isSecondPhase = (currentLoopMode === 'a-b-a' || currentLoopMode === 'b-a-b') && index >= currentForwardCount;
-  
-  if (!isSecondPhase) {
-    const dir = (currentLoopMode === 'b-to-a' || currentLoopMode === 'b-a-b') ? 'B &rarr; A' : 'A &rarr; B';
-    const pct = Math.round((index / (currentForwardCount - 1)) * 100);
-    inspectorTitle.innerHTML = `Step #${index + 1} &bull; ${dir} &bull; <span style="color:var(--accent)">${pct}%</span>`;
+  // Update labels according to precomputed frame metadata
+  if (meta && meta.inspectorTitle) {
+    inspectorTitle.innerHTML = meta.inspectorTitle;
   } else {
-    const dir = currentLoopMode === 'a-b-a' ? 'B &rarr; A (Return)' : 'A &rarr; B (Return)';
-    inspectorTitle.innerHTML = `Step #${index + 1} &bull; ${dir}`;
+    inspectorTitle.innerHTML = `Step #${index + 1}`;
   }
   inspectorCounter.textContent = `${index + 1} / ${currentRenderedFrames.length}`;
 
